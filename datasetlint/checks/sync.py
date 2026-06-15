@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 
 from datasetlint.schemas import DatasetContext, Issue, make_issue, relative_path
 
@@ -250,7 +251,7 @@ def _sensor_timings(timestamps: dict[str, pd.Series]) -> dict[str, dict[str, flo
     return timings
 
 
-def _nearest_timestamp_gaps(left: pd.Series, right: pd.Series) -> np.ndarray:
+def _nearest_timestamp_gaps(left: pd.Series, right: pd.Series) -> NDArray[np.float64]:
     if left.empty or right.empty:
         return np.asarray([], dtype=float)
     source = left.to_numpy(dtype=float)
