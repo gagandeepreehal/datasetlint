@@ -1,0 +1,7 @@
+{
+  "dataset_name": "bad_log",
+  "version": "",
+  "sensors": ["camera_front", "imu", "gps"],
+  "duration_sec": 10.0
+}
+

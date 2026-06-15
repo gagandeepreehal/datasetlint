@@ -1,0 +1,3 @@
+timestamp,track_id,class,x,y,width,height,confidence
+0.1,track-1,car,10,20,50,40,0.95
+

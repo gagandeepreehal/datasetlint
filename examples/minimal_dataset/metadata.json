@@ -1,0 +1,7 @@
+{
+  "dataset_name": "sample_log",
+  "version": "0.1",
+  "sensors": ["camera_front", "imu", "gps"],
+  "duration_sec": 0.2
+}
+
