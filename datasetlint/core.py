@@ -9,12 +9,14 @@ from typing import Any
 import pandas as pd
 from pandas.errors import EmptyDataError, ParserError
 
+from datasetlint.adapters import DatasetAdapter, FolderAdapter, get_adapter
 from datasetlint.checks import (
     calibration,
     files,
     labels,
     metadata,
     sensors,
+    sync,
     timestamps,
     trajectories,
 )
@@ -26,35 +28,40 @@ from datasetlint.schemas import DatasetContext, Issue, LintConfig, make_issue, r
 
 Check = Callable[[DatasetContext], list[Issue]]
 
-CHECKS: tuple[Check, ...] = (
+FILE_CHECKS: tuple[Check, ...] = (
     files.check_required_files,
     files.check_empty_files,
     files.check_missing_sensor_files,
     files.check_broken_paths,
     files.check_duplicate_filenames,
+)
+METADATA_CHECKS: tuple[Check, ...] = (
     metadata.check_metadata_schema,
     metadata.check_declared_sensors_exist,
     metadata.check_duration_matches_timestamps,
     metadata.check_dataset_version_present,
+)
+TIMESTAMP_CHECKS: tuple[Check, ...] = (
     timestamps.check_monotonic_timestamps,
     timestamps.check_duplicate_timestamps,
     timestamps.check_large_timestamp_gaps,
-    timestamps.check_sensor_time_overlap,
-    timestamps.check_sensor_frequency_stability,
+)
+SENSOR_CHECKS: tuple[Check, ...] = (
     sensors.check_sensor_columns,
     sensors.check_sensor_dimensions,
     sensors.check_sensor_frequency,
     sensors.check_missing_frames,
+)
+SYNC_CHECKS: tuple[Check, ...] = sync.SENSOR_SYNC_CHECKS
+CALIBRATION_CHECKS: tuple[Check, ...] = (
     calibration.check_calibration_exists,
     calibration.check_intrinsics_shape,
     calibration.check_intrinsics_values,
     calibration.check_extrinsics_shape,
     calibration.check_quaternion_norm,
-    labels.check_label_columns,
-    labels.check_label_confidence_range,
-    labels.check_label_geometry,
-    labels.check_label_timestamps_match_sensor_range,
-    labels.check_track_id_consistency,
+)
+LABEL_CHECKS: tuple[Check, ...] = labels.LABEL_CONSISTENCY_CHECKS
+TRAJECTORY_CHECKS: tuple[Check, ...] = (
     trajectories.check_trajectory_columns,
     trajectories.check_trajectory_finite_values,
     trajectories.check_unrealistic_speed,
@@ -63,20 +70,60 @@ CHECKS: tuple[Check, ...] = (
     trajectories.check_stationary_dataset,
 )
 
+CHECK_GROUPS: dict[str, tuple[Check, ...]] = {
+    "files": FILE_CHECKS,
+    "metadata": METADATA_CHECKS,
+    "timestamps": TIMESTAMP_CHECKS,
+    "sensors": SENSOR_CHECKS,
+    "sync": SYNC_CHECKS,
+    "calibration": CALIBRATION_CHECKS,
+    "labels": LABEL_CHECKS,
+    "trajectories": TRAJECTORY_CHECKS,
+}
+CHECKS: tuple[Check, ...] = (
+    FILE_CHECKS
+    + METADATA_CHECKS
+    + TIMESTAMP_CHECKS
+    + SENSOR_CHECKS
+    + SYNC_CHECKS
+    + CALIBRATION_CHECKS
+    + LABEL_CHECKS
+    + TRAJECTORY_CHECKS
+)
+
 
 def lint_dataset(
     path: str | Path,
     config: str | Path | dict[str, Any] | LintConfig | None = None,
+    checks: str | list[str] | tuple[str, ...] | None = None,
+    adapter: str = "folder",
 ) -> LintReport:
     """Validate a folder-based robotics dataset."""
 
     dataset_path = Path(path).expanduser().resolve()
     lint_config = load_config(dataset_path, config)
+    selected_adapter = _select_adapter(dataset_path, adapter)
+    if not isinstance(selected_adapter, FolderAdapter):
+        issue = make_issue(
+            "load_dataset",
+            "error",
+            f"Adapter '{selected_adapter.name}' is detection-only in DatasetLint v0; "
+            "convert the dataset to the folder CSV format before linting.",
+            file=str(dataset_path),
+            metadata={"adapter": selected_adapter.name},
+        )
+        return LintReport(
+            dataset_path=str(dataset_path),
+            issues=[issue],
+            stats={"issue_count": 1},
+            passed=False,
+        )
+
     ctx = _load_context(dataset_path, lint_config)
 
     issues: list[Issue] = []
     issues.extend(ctx.load_issues)
-    for check in CHECKS:
+    for check in _select_checks(checks):
         issues.extend(check(ctx))
 
     stats = _build_stats(ctx, issues)
@@ -203,13 +250,57 @@ def _load_csv_dir(
 
 
 def _build_stats(ctx: DatasetContext, issues: list[Issue]) -> dict[str, Any]:
+    by_severity = {"info": 0, "warning": 0, "error": 0}
+    for issue in issues:
+        by_severity[issue.severity] += 1
     return {
         "issue_count": len(issues),
+        "issue_count_by_severity": by_severity,
         "sensor_count": len(ctx.sensor_frames),
         "label_file_count": len(ctx.label_frames),
         "trajectory_file_count": len(ctx.trajectory_frames),
         "declared_sensor_count": len(ctx.declared_sensors()),
+        "sync": sync.sensor_sync_diagnostics(ctx),
     }
+
+
+def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Check, ...]:
+    if checks is None:
+        return CHECKS
+    names: list[str] = []
+    if isinstance(checks, str):
+        names.extend(name.strip().lower() for name in checks.split(",") if name.strip())
+    else:
+        for item in checks:
+            names.extend(name.strip().lower() for name in item.split(",") if name.strip())
+    if not names or names == ["all"]:
+        return CHECKS
+
+    selected: list[Check] = []
+    seen: set[Check] = set()
+    for name in names:
+        group: tuple[Check, ...]
+        if name == "all":
+            group = CHECKS
+        else:
+            maybe_group = CHECK_GROUPS.get(name)
+            if maybe_group is None:
+                known = ", ".join(sorted([*CHECK_GROUPS, "all"]))
+                raise ValueError(f"Unknown check group '{name}'. Known groups: {known}.")
+            group = maybe_group
+        for check in group:
+            if check not in seen:
+                selected.append(check)
+                seen.add(check)
+    return tuple(selected)
+
+
+def _select_adapter(dataset_path: Path, adapter: str) -> DatasetAdapter:
+    if adapter == "folder":
+        return FolderAdapter()
+    if adapter == "auto" and not dataset_path.exists():
+        return FolderAdapter()
+    return get_adapter(dataset_path, adapter)
 
 
 def _parse_simple_yaml(path: Path) -> dict[str, Any]:

@@ -35,6 +35,17 @@ class LintConfig(BaseModel):
     max_accel_mps2: float = 12.0
     stationary_distance_threshold_m: float = 0.05
     duration_tolerance_sec: float = 1.0
+    label_max_position_jump_px: float = 200.0
+    label_max_size_change_ratio: float = 3.0
+    label_min_track_length: int = 3
+    label_class_switch_threshold: int = 0
+    max_pairwise_sync_gap_sec: float = 0.05
+    max_timestamp_gap_sec: float = 0.5
+    min_overlap_ratio: float = 0.8
+    frequency_jitter_ratio: float = 0.2
+    frame_count_drop_ratio_warning: float = 0.1
+    duration_drop_ratio_warning: float = 0.1
+    issue_regression_severity: Severity = "warning"
     expected_sensor_rates: dict[str, float] = Field(
         default_factory=lambda: {
             "camera_front": 10.0,
@@ -104,4 +115,3 @@ def relative_path(base: Path, path: Path) -> str:
         return str(path.relative_to(base))
     except ValueError:
         return str(path)
-

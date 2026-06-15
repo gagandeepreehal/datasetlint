@@ -9,5 +9,13 @@ It is intentionally small:
 - CLI and importable API
 - No ROS, simulator, GPU, cloud, or model dependency
 
-Start with the quickstart, review the supported checks, and use the release checklist before
-tagging a package release.
+Start with the quickstart, review the supported checks, inspect stats and diffs,
+and use the release checklist before tagging a package release.
+
+Core docs:
+
+- [Quickstart](quickstart.md)
+- [Checks](checks.md)
+- [Stats](stats.md)
+- [Diff](diff.md)
+- [Adapters](adapters.md)

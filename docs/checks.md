@@ -15,8 +15,21 @@ DatasetLint v0.1 supports simple folder-based datasets with `metadata.json`, `ca
 - Non-monotonic timestamps
 - Duplicate timestamps
 - Large timestamp gaps
-- Sensor time ranges with no overlap
+
+## Synchronization Checks
+
+Run only synchronization diagnostics with:
+
+```bash
+datasetlint examples/minimal_dataset --checks sync
+```
+
+- Sensor time ranges with no overlap or low overlap ratio
+- Sensor stream start offsets
+- Pairwise median timestamp gaps between sensor streams
+- Missing frame bursts based on large timestamp gaps
 - Unstable sensor frame intervals
+- Per-sensor timing diagnostics in report stats
 
 ## Sensor Checks
 
@@ -34,11 +47,22 @@ DatasetLint v0.1 supports simple folder-based datasets with `metadata.json`, `ca
 
 ## Label Checks
 
+Run only label diagnostics with:
+
+```bash
+datasetlint examples/minimal_dataset --checks labels
+```
+
 - Missing detection label columns
 - Confidence outside `[0, 1]`
 - Non-positive label width or height
 - Label timestamps outside sensor time ranges
-- Track IDs assigned multiple class names
+- Track IDs changing class more often than configured
+- Duplicate `track_id` at the same timestamp
+- Bounding box center jumps above `label_max_position_jump_px`
+- Missing timestamps inside a track
+- Tracks shorter than `label_min_track_length`
+- Bounding box size changes above `label_max_size_change_ratio`
 
 ## Trajectory Checks
 
@@ -48,3 +72,37 @@ DatasetLint v0.1 supports simple folder-based datasets with `metadata.json`, `ca
 - Yaw outside `[-pi, pi]`
 - Stationary or nearly stationary trajectories
 
+## Check Groups
+
+`--checks` accepts a comma-separated list:
+
+- `files`
+- `metadata`
+- `timestamps`
+- `sensors`
+- `sync`
+- `calibration`
+- `labels`
+- `trajectories`
+- `all`
+
+Examples:
+
+```bash
+datasetlint data/ --checks labels
+datasetlint data/ --checks sync
+datasetlint data/ --checks labels,sync
+```
+
+## Related Configuration
+
+```yaml
+label_max_position_jump_px: 200
+label_max_size_change_ratio: 3.0
+label_min_track_length: 3
+label_class_switch_threshold: 0
+max_pairwise_sync_gap_sec: 0.05
+max_timestamp_gap_sec: 0.5
+min_overlap_ratio: 0.8
+frequency_jitter_ratio: 0.2
+```
