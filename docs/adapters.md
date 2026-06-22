@@ -1,7 +1,6 @@
 # Adapters
 
-DatasetLint v0 keeps the native folder format as the fully supported adapter and
-adds lightweight detection for common robotics dataset containers.
+Adapters detect or load dataset formats. The folder adapter is the only adapter that deeply loads data in v0.1.
 
 ```bash
 datasetlint adapters examples/minimal_dataset
@@ -9,39 +8,59 @@ datasetlint examples/minimal_dataset --adapter folder
 datasetlint examples/minimal_dataset --adapter auto
 ```
 
-Python:
+## Status Table
+
+| Adapter | Status | Detection | Deep validation |
+| --- | --- | --- | --- |
+| `folder` | supported | folder with `metadata.json`, `sensors/`, `labels/`, or `trajectories/` | yes |
+| `mcap` | detection-only | `.mcap` file or folder containing `.mcap` files | no |
+| `rosbag` | detection-only | `.bag` file or folder containing `.bag` files | no |
+| `nuscenes` | detection-only | likely NuScenes metadata files or `v1.0-*` structure | no |
+| `waymo` | detection-only | `.tfrecord` file or folder containing `.tfrecord` files | no |
+
+Detection-only adapters raise `NotImplementedError` for deep parsing. Convert those datasets to the native folder format before linting with v0.1.
+
+## Python API
 
 ```python
-from datasetlint.adapters import get_adapter
+from datasetlint.adapters import detect_adapters, get_adapter
+
+for detection in detect_adapters("examples/minimal_dataset"):
+    print(detection.name, detection.can_load, detection.message)
 
 adapter = get_adapter("examples/minimal_dataset", "auto")
 metadata = adapter.load_metadata("examples/minimal_dataset")
 ```
 
-## Folder Adapter
+## Adapter Interface
 
-`FolderAdapter` fully supports the current DatasetLint layout:
+Custom adapters subclass `DatasetAdapter`:
 
-```text
-metadata.json
-calibration.json
-sensors/*.csv
-labels/detections.csv
-trajectories/*.csv
+```python
+from datasetlint.adapters.base import DatasetAdapter
+
+class MyAdapter(DatasetAdapter):
+    name = "my-format"
+
+    def can_load(self, path):
+        ...
 ```
 
-It can load metadata, sensor listings, timestamps, labels, trajectories, and
-calibration.
+The interface includes:
 
-## Detection-Only Adapters
+- `can_load(path)`
+- `load_metadata(path)`
+- `list_sensors(path)`
+- `load_timestamps(path, sensor_name)`
+- `load_labels(path)`
+- `load_trajectory(path)`
+- `load_calibration(path)`
 
-The following adapters detect likely dataset inputs but do not deeply parse them
-in v0:
+Register adapters in `datasetlint/adapters/__init__.py` before documenting them as available.
 
-- `MCAPAdapter` detects `.mcap` files and can list basic file metadata.
-- `ROSBagAdapter` detects `.bag` files.
-- `NuScenesAdapter` detects `v1.0-*` folder structures or core metadata files.
-- `WaymoAdapter` detects `.tfrecord` files.
+## Current Limitations
 
-Deep parsing raises `NotImplementedError` with an actionable message. Convert
-these datasets to the folder CSV format before linting with v0.
+- Adapter plugins are not dynamically discovered.
+- Non-folder adapters are detection-only.
+- Adapter compatibility tests are limited to tiny fixtures.
+- There is no automatic conversion pipeline from MCAP, ROS bag, NuScenes, or Waymo to the folder format.

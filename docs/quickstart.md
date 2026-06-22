@@ -1,33 +1,64 @@
 # Quickstart
 
-Install the package:
+## 1. Install From Source
 
-DatasetLint requires Python 3.10 or newer. On macOS, the system `python3` may be
-Python 3.9; install a newer interpreter first:
-
-```bash
-brew install python@3.11
-python3.11 -m pip install datasetlint
-```
+DatasetLint requires Python 3.10 or newer.
 
 ```bash
-pip install datasetlint
+git clone https://github.com/gagandeepreehal/datasetlint.git
+cd datasetlint
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -e ".[dev,docs]"
 ```
 
-Run the CLI:
+Use `python3.10`, `python3.11`, or `python3.12` if that is the interpreter name on your machine.
+
+## 2. Validate The Passing Example
 
 ```bash
 datasetlint examples/minimal_dataset
+```
+
+Expected result:
+
+```text
+DatasetLint report for .../examples/minimal_dataset: passed with 0 issue(s) (error=0, warning=0, info=0).
+```
+
+## 3. Inspect Other Output Formats
+
+```bash
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
+```
+
+## 4. Run Focused Checks
+
+```bash
 datasetlint examples/minimal_dataset --checks labels
 datasetlint examples/minimal_dataset --checks sync
+datasetlint examples/minimal_dataset --checks labels,sync
+```
+
+## 5. Run The Failure Example
+
+```bash
+datasetlint examples/bad_dataset
+```
+
+This exits with code `1` because the fixture intentionally contains missing files, invalid calibration, timestamp issues, label problems, and trajectory anomalies.
+
+## 6. Compute Stats And Diffs
+
+```bash
 datasetlint stats examples/minimal_dataset
 datasetlint diff examples/minimal_dataset examples/bad_dataset
 datasetlint adapters examples/minimal_dataset
 ```
 
-Use the Python API:
+## 7. Use The Python API
 
 ```python
 from datasetlint import compare_datasets, compute_dataset_stats, lint_dataset
@@ -36,43 +67,32 @@ report = lint_dataset("examples/minimal_dataset")
 print(report.summary())
 
 stats = compute_dataset_stats("examples/minimal_dataset")
+print(stats.frame_counts)
+
 diff = compare_datasets("examples/minimal_dataset", "examples/bad_dataset")
+print(diff.summary)
 ```
 
-Configure thresholds with `datasetlint.yaml` in the dataset folder:
+## Minimal Dataset Shape
 
-```yaml
-timestamp_gap_threshold_sec: 0.5
-max_pairwise_sync_gap_sec: 0.05
-label_max_position_jump_px: 200
-label_max_size_change_ratio: 3.0
-label_min_track_length: 3
-max_speed_mps: 70
-max_accel_mps2: 12
-expected_sensor_rates:
-  camera_front: 10
-  imu: 100
-  gps: 10
+```text
+my_dataset/
+  metadata.json
+  calibration.json
+  sensors/
+    camera_front.csv
+  images/
+    000001.jpg
 ```
-
-`timestamp_gap_threshold_sec` controls both general timestamp gaps and sensor-stream burst-gap
-diagnostics.
-Unknown or removed config keys fail validation; update older `max_timestamp_gap_sec` entries to
-`timestamp_gap_threshold_sec`.
-
-A minimal `metadata.json` uses `dataset_name`:
 
 ```json
 {
   "dataset_name": "sample_log",
   "version": "0.1",
   "sensors": ["camera_front"],
-  "duration_sec": 0.2
+  "duration_sec": 0.1
 }
 ```
-
-Camera sensor CSVs require `timestamp,path,width,height`. `filename` is also accepted as an
-alias for `path` if `path` is not present:
 
 ```csv
 timestamp,path,width,height

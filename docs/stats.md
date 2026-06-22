@@ -32,3 +32,9 @@ The returned `DatasetStats` model includes:
 - `acceleration_summary`
 - `missing_frame_counts`
 - `issue_summary`
+
+Stats are printed to stdout. Redirect JSON or Markdown output when you want an artifact:
+
+```bash
+datasetlint stats examples/minimal_dataset --format json > datasetlint-stats.json
+```

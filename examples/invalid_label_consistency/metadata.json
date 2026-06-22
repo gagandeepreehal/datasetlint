@@ -1,0 +1,6 @@
+{
+  "dataset_name": "label_consistency",
+  "version": "0.1",
+  "sensors": ["camera_front"],
+  "duration_sec": 0.2
+}
