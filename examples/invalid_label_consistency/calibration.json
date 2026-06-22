@@ -1,0 +1,9 @@
+{
+  "camera_front": {
+    "intrinsics": [[1000, 0, 640], [0, 1000, 360], [0, 0, 1]],
+    "extrinsics": {
+      "translation": [0.5, 0.0, 1.2],
+      "rotation_quat": [1, 0, 0, 0]
+    }
+  }
+}

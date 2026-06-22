@@ -2,8 +2,7 @@ cff-version: 1.2.0
 message: "If you use DatasetLint in research or production reports, please cite it using this metadata."
 title: "DatasetLint"
 version: "0.1.0"
-date-released: "2026-06-23"
-abstract: "Lightweight validation for robotics and Physical AI datasets."
+abstract: "Lightweight, local-first linting for robotics and physical AI datasets."
 authors:
   - family-names: "Reehal"
     given-names: "Gagandeep"
