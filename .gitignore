@@ -1,4 +1,6 @@
 .DS_Store
+END_USER_EVALUATION_REPORT.md
+UPDATED_END_USER_EVALUATION_REPORT.md
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -11,4 +13,3 @@ build/
 *.egg-info/
 .venv/
 venv/
-
