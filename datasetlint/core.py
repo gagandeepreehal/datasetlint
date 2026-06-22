@@ -255,6 +255,7 @@ def _load_csv_dir(
             frame = read_csv(path)
             if (
                 folder_name == "sensors"
+                and "camera" in name
                 and "path" not in frame.columns
                 and "filename" in frame.columns
             ):

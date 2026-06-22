@@ -45,3 +45,26 @@ def test_camera_filename_column_is_accepted_as_path_alias(tmp_path):
     assert report.passed is True
     assert not any(issue.check_name == "check_sensor_columns" for issue in report.issues)
     assert not any(issue.check_name == "check_broken_paths" for issue in report.issues)
+
+
+def test_non_camera_filename_column_is_not_treated_as_path_alias(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    (dataset / "sensors" / "radar.csv").write_text(
+        "\n".join(
+            [
+                "timestamp,filename,intensity",
+                "0.0,scan-0001,0.8",
+                "0.1,scan-0002,0.9",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = lint_dataset(dataset)
+
+    assert not any(
+        issue.check_name == "check_broken_paths"
+        and issue.file == "sensors/radar.csv"
+        for issue in report.issues
+    )
