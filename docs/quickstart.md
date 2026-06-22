@@ -57,6 +57,8 @@ expected_sensor_rates:
 
 `timestamp_gap_threshold_sec` controls both general timestamp gaps and sensor-stream burst-gap
 diagnostics.
+Unknown or removed config keys fail validation; update older `max_timestamp_gap_sec` entries to
+`timestamp_gap_threshold_sec`.
 
 A minimal `metadata.json` uses `dataset_name`:
 

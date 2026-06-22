@@ -116,7 +116,10 @@ def main(
 def _run_stats(args: list[str], config: Path | None, format: OutputFormat) -> None:
     if len(args) != 1:
         _usage_error("stats expects one dataset path.")
-    stats = compute_dataset_stats(Path(args[0]), config=config)
+    try:
+        stats = compute_dataset_stats(Path(args[0]), config=config)
+    except ValueError as exc:
+        _usage_error(str(exc))
     if format is OutputFormat.json:
         typer.echo(stats.to_json())
     elif format is OutputFormat.markdown:
@@ -133,7 +136,10 @@ def _run_diff(
 ) -> None:
     if len(args) != 2:
         _usage_error("diff expects OLD_DATASET and NEW_DATASET paths.")
-    report = compare_datasets(Path(args[0]), Path(args[1]), config=config)
+    try:
+        report = compare_datasets(Path(args[0]), Path(args[1]), config=config)
+    except ValueError as exc:
+        _usage_error(str(exc))
     if format is OutputFormat.json:
         typer.echo(report.to_json())
     elif format is OutputFormat.markdown:

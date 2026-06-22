@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 Severity = Literal["info", "warning", "error"]
 
@@ -26,6 +26,8 @@ class Issue(BaseModel):
 
 class LintConfig(BaseModel):
     """Configuration knobs for checks."""
+
+    model_config = ConfigDict(extra="forbid")
 
     timestamp_gap_threshold_sec: float = 0.5
     frequency_tolerance_fraction: float = 0.30

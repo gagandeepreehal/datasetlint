@@ -103,6 +103,8 @@ The YAML reader intentionally supports this simple shape without adding a runtim
 
 `timestamp_gap_threshold_sec` controls both the general timestamp gap check and sensor-stream
 burst-gap diagnostics.
+Unknown or removed config keys fail validation so stale `datasetlint.yaml` files are not silently
+ignored.
 
 ## Folder Dataset Contract
 

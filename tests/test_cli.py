@@ -109,3 +109,42 @@ def test_cli_invalid_adapter_returns_usage_error(tmp_path):
     assert result.exit_code == 2
     assert "Error: Unknown adapter 'foobar'. Valid adapters:" in result.stderr
     assert "Traceback" not in result.output
+
+
+def test_cli_rejects_removed_config_key(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    (dataset / "datasetlint.yaml").write_text("max_timestamp_gap_sec: 1.0\n", encoding="utf-8")
+    runner = CliRunner()
+
+    result = runner.invoke(app, [str(dataset)])
+
+    assert result.exit_code == 2
+    assert "max_timestamp_gap_sec" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_cli_stats_rejects_removed_config_key(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    (dataset / "datasetlint.yaml").write_text("max_timestamp_gap_sec: 1.0\n", encoding="utf-8")
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["stats", str(dataset)])
+
+    assert result.exit_code == 2
+    assert "max_timestamp_gap_sec" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_cli_diff_rejects_removed_config_key(tmp_path):
+    old_dataset = write_good_dataset(tmp_path / "old")
+    new_dataset = write_good_dataset(tmp_path / "new")
+    (new_dataset / "datasetlint.yaml").write_text(
+        "max_timestamp_gap_sec: 1.0\n", encoding="utf-8"
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["diff", str(old_dataset), str(new_dataset)])
+
+    assert result.exit_code == 2
+    assert "max_timestamp_gap_sec" in result.stderr
+    assert "Traceback" not in result.output

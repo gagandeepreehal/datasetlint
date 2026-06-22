@@ -36,6 +36,8 @@ datasetlint examples/minimal_dataset --checks sync
 
 `timestamp_gap_threshold_sec` controls both the general timestamp gap check and sensor-stream
 missing-frame burst diagnostics.
+Unknown or removed config keys fail validation; update older `max_timestamp_gap_sec` entries to
+`timestamp_gap_threshold_sec`.
 
 When timestamp and sync checks run together, DatasetLint reports those row-level sensor gaps once
 to avoid duplicate findings. Run `--checks sync` when you need the burst-specific sync diagnostic.
