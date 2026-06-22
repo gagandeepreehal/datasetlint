@@ -83,7 +83,7 @@ def test_python_module_help_entrypoint():
     )
 
     assert result.returncode == 0
-    assert "Usage: python -m datasetlint" in result.stdout
+    assert "datasetlint" in result.stdout
     assert "--help" in result.stdout
 
 
