@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 
@@ -83,8 +84,9 @@ def test_python_module_help_entrypoint():
     )
 
     assert result.returncode == 0
-    assert "datasetlint" in result.stdout
-    assert "--help" in result.stdout
+    output = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", result.stdout)
+    assert "python -m datasetlint" in output
+    assert "--help" in output
 
 
 def test_cli_invalid_checks_returns_usage_error(tmp_path):
