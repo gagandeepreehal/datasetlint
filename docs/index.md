@@ -19,3 +19,4 @@ Core docs:
 - [Stats](stats.md)
 - [Diff](diff.md)
 - [Adapters](adapters.md)
+- [Release Checklist](release-checklist.md)

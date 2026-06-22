@@ -1,8 +1,16 @@
 # DatasetLint
 
+[![CI](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml)
+[![Docs](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml)
+[![PyPI](https://img.shields.io/pypi/v/datasetlint.svg)](https://pypi.org/project/datasetlint/)
+[![Python](https://img.shields.io/pypi/pyversions/datasetlint.svg)](https://pypi.org/project/datasetlint/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 DatasetLint catches timestamp drift, missing frames, broken calibration, invalid labels, and trajectory anomalies before they poison Physical AI training and evaluation pipelines.
 
 DatasetLint is a lightweight, standalone Python library for validating folder-based robotics datasets. It runs on a MacBook without robots, simulators, GPUs, ROS, cloud services, or large models.
+
+Documentation: https://gagandeepreehal.github.io/datasetlint/
 
 ## Why Robotics Datasets Fail
 
@@ -31,10 +39,13 @@ python3.11 -m pip install datasetlint
 pip install datasetlint
 ```
 
+The `datasetlint` PyPI name was unclaimed when checked on 2026-06-23. The command above is the
+intended public install path after the first PyPI release is published from this repository.
+
 For local development:
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,docs]"
 ```
 
 ## CLI Usage

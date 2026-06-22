@@ -8,20 +8,23 @@ version = "0.1.0"
 description = "Lightweight validation for robotics and Physical AI datasets."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
-  { name = "DatasetLint contributors" }
+  { name = "Gagandeep Reehal" }
+]
+maintainers = [
+  { name = "Gagandeep Reehal" }
 ]
 keywords = ["robotics", "datasets", "validation", "physical-ai", "lint"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering",
+  "Typing :: Typed",
 ]
 dependencies = [
   "numpy>=1.23",
@@ -37,6 +40,11 @@ dev = [
   "pytest>=7",
   "ruff>=0.4",
   "mypy>=1.8",
+  "build>=1",
+  "twine>=5",
+]
+docs = [
+  "mkdocs>=1.6",
 ]
 
 [project.scripts]
@@ -46,9 +54,14 @@ datasetlint = "datasetlint.cli:app"
 Homepage = "https://github.com/gagandeepreehal/datasetlint"
 Source = "https://github.com/gagandeepreehal/datasetlint"
 "Bug Tracker" = "https://github.com/gagandeepreehal/datasetlint/issues"
+Documentation = "https://gagandeepreehal.github.io/datasetlint/"
+Changelog = "https://github.com/gagandeepreehal/datasetlint/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 include = ["datasetlint*"]
+
+[tool.setuptools.package-data]
+datasetlint = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

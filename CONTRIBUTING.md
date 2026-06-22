@@ -8,7 +8,7 @@ folder-based dataset validation.
 Use Python 3.10 or newer:
 
 ```bash
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,docs]"
 ```
 
 Run the checks before opening a pull request:
@@ -17,6 +17,7 @@ Run the checks before opening a pull request:
 pytest
 ruff check .
 mypy datasetlint
+mkdocs build --strict
 ```
 
 ## Pull Requests

@@ -1,0 +1,19 @@
+site_name: DatasetLint
+site_description: Lightweight validation for robotics and Physical AI datasets.
+site_url: https://gagandeepreehal.github.io/datasetlint/
+repo_url: https://github.com/gagandeepreehal/datasetlint
+repo_name: gagandeepreehal/datasetlint
+
+theme:
+  name: readthedocs
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Checks: checks.md
+  - Stats: stats.md
+  - Diff: diff.md
+  - Adapters: adapters.md
+  - Release Checklist: release-checklist.md
+
+strict: true
