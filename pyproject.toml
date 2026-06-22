@@ -33,6 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "numpy<2.5",
   "pytest>=7",
   "ruff>=0.4",
   "mypy>=1.8",
