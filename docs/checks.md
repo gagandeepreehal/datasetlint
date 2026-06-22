@@ -34,9 +34,13 @@ datasetlint examples/minimal_dataset --checks sync
 - Unstable sensor frame intervals
 - Per-sensor timing diagnostics in report stats
 
-`max_timestamp_gap_sec` controls missing frame burst diagnostics. The separate
-`timestamp_gap_threshold_sec` setting controls the general timestamp gap check across every
-loaded CSV; tune both when you want matching thresholds for those related reports.
+`timestamp_gap_threshold_sec` controls both the general timestamp gap check and sensor-stream
+missing-frame burst diagnostics.
+Unknown or removed config keys fail validation; update older `max_timestamp_gap_sec` entries to
+`timestamp_gap_threshold_sec`.
+
+When timestamp and sync checks run together, DatasetLint reports those row-level sensor gaps once
+to avoid duplicate findings. Run `--checks sync` when you need the burst-specific sync diagnostic.
 
 ## Sensor Checks
 
@@ -113,7 +117,6 @@ label_min_track_length: 3
 label_class_switch_threshold: 0
 max_pairwise_sync_gap_sec: 0.05
 timestamp_gap_threshold_sec: 0.5
-max_timestamp_gap_sec: 0.5
 min_overlap_ratio: 0.8
 frequency_jitter_ratio: 0.2
 ```

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import re
+import subprocess
+import sys
+
 from typer.testing import CliRunner
 
 from datasetlint.cli import app
@@ -71,6 +75,20 @@ def test_cli_version_flag():
     assert result.stdout.strip() == "datasetlint 0.1.0"
 
 
+def test_python_module_help_entrypoint():
+    result = subprocess.run(
+        [sys.executable, "-m", "datasetlint", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    output = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", result.stdout)
+    assert "python -m datasetlint" in output
+    assert "--help" in output
+
+
 def test_cli_invalid_checks_returns_usage_error(tmp_path):
     dataset = write_good_dataset(tmp_path / "dataset")
     runner = CliRunner()
@@ -90,4 +108,43 @@ def test_cli_invalid_adapter_returns_usage_error(tmp_path):
 
     assert result.exit_code == 2
     assert "Error: Unknown adapter 'foobar'. Valid adapters:" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_cli_rejects_removed_config_key(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    (dataset / "datasetlint.yaml").write_text("max_timestamp_gap_sec: 1.0\n", encoding="utf-8")
+    runner = CliRunner()
+
+    result = runner.invoke(app, [str(dataset)])
+
+    assert result.exit_code == 2
+    assert "max_timestamp_gap_sec" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_cli_stats_rejects_removed_config_key(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    (dataset / "datasetlint.yaml").write_text("max_timestamp_gap_sec: 1.0\n", encoding="utf-8")
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["stats", str(dataset)])
+
+    assert result.exit_code == 2
+    assert "max_timestamp_gap_sec" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_cli_diff_rejects_removed_config_key(tmp_path):
+    old_dataset = write_good_dataset(tmp_path / "old")
+    new_dataset = write_good_dataset(tmp_path / "new")
+    (new_dataset / "datasetlint.yaml").write_text(
+        "max_timestamp_gap_sec: 1.0\n", encoding="utf-8"
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["diff", str(old_dataset), str(new_dataset)])
+
+    assert result.exit_code == 2
+    assert "max_timestamp_gap_sec" in result.stderr
     assert "Traceback" not in result.output

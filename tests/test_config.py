@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
 from datasetlint import lint_dataset
+from datasetlint.schemas import LintConfig
 from tests.conftest import write_good_dataset
 
 
@@ -24,3 +27,15 @@ def test_dataset_yaml_config_overrides_thresholds(tmp_path):
 
     assert not any(issue.check_name == "check_unrealistic_speed" for issue in report.issues)
 
+
+def test_config_rejects_removed_timestamp_gap_key(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    (dataset / "datasetlint.yaml").write_text("max_timestamp_gap_sec: 1.0\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="max_timestamp_gap_sec"):
+        lint_dataset(dataset, checks="sync")
+
+
+def test_config_dict_rejects_removed_timestamp_gap_key():
+    with pytest.raises(ValueError, match="max_timestamp_gap_sec"):
+        LintConfig(max_timestamp_gap_sec=1.0)

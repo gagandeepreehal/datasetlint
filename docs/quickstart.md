@@ -44,7 +44,6 @@ Configure thresholds with `datasetlint.yaml` in the dataset folder:
 ```yaml
 timestamp_gap_threshold_sec: 0.5
 max_pairwise_sync_gap_sec: 0.05
-max_timestamp_gap_sec: 0.5
 label_max_position_jump_px: 200
 label_max_size_change_ratio: 3.0
 label_min_track_length: 3
@@ -56,8 +55,10 @@ expected_sensor_rates:
   gps: 10
 ```
 
-`timestamp_gap_threshold_sec` is the general timestamp gap threshold. `max_timestamp_gap_sec`
-is used by synchronization diagnostics and stats for sensor-stream burst gaps.
+`timestamp_gap_threshold_sec` controls both general timestamp gaps and sensor-stream burst-gap
+diagnostics.
+Unknown or removed config keys fail validation; update older `max_timestamp_gap_sec` entries to
+`timestamp_gap_threshold_sec`.
 
 A minimal `metadata.json` uses `dataset_name`:
 

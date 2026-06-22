@@ -114,7 +114,7 @@ def check_pairwise_sync_gap(ctx: DatasetContext) -> list[Issue]:
 
 def check_missing_frame_bursts(ctx: DatasetContext) -> list[Issue]:
     issues: list[Issue] = []
-    threshold = ctx.config.max_timestamp_gap_sec
+    threshold = ctx.config.timestamp_gap_threshold_sec
     for sensor, timestamps in _sensor_timestamps(ctx).items():
         if len(timestamps) < 2:
             continue
@@ -124,13 +124,13 @@ def check_missing_frame_bursts(ctx: DatasetContext) -> list[Issue]:
         for index, gap in bursts.items():
             estimated_missing = _estimated_missing_frames(float(gap), median_gap)
             issues.append(
-                    make_issue(
-                        "check_missing_frame_bursts",
-                        "warning",
-                        "Sensor has a burst-sized timestamp gap; inspect dropped frames "
-                        "or logging stalls.",
-                        file=relative_path(ctx.path, ctx.sensor_files[sensor]),
-                        row=int(index) + 2,
+                make_issue(
+                    "check_missing_frame_bursts",
+                    "warning",
+                    "Sensor has a burst-sized timestamp gap; inspect dropped frames "
+                    "or logging stalls.",
+                    file=relative_path(ctx.path, ctx.sensor_files[sensor]),
+                    row=int(index) + 2,
                     metadata={
                         "sensor": sensor,
                         "gap_sec": float(gap),
