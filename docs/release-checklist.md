@@ -8,6 +8,10 @@ Run the automated release gate first:
 make release-check
 ```
 
+Use `PYTHON=/path/to/python` when the dev dependencies are installed in a specific
+environment, and `WHEEL_DIR=/tmp/datasetlint-wheel` when you want wheel artifacts outside
+the worktree.
+
 - Run `pytest`.
 - Run `ruff check .`.
 - Run `mypy datasetlint`.

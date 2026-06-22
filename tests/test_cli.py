@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+
 from typer.testing import CliRunner
 
 from datasetlint.cli import app
@@ -69,6 +72,19 @@ def test_cli_version_flag():
 
     assert result.exit_code == 0
     assert result.stdout.strip() == "datasetlint 0.1.0"
+
+
+def test_python_module_help_entrypoint():
+    result = subprocess.run(
+        [sys.executable, "-m", "datasetlint", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "Usage: python -m datasetlint" in result.stdout
+    assert "--help" in result.stdout
 
 
 def test_cli_invalid_checks_returns_usage_error(tmp_path):

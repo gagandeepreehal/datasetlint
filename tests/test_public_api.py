@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import importlib.metadata
+
 import datasetlint
 from datasetlint import lint_dataset
 from datasetlint.checks import timestamps
 
 
 def test_package_exposes_version():
-    assert datasetlint.__version__ == "0.1.0"
+    assert datasetlint.__version__ == importlib.metadata.version("datasetlint")
 
 
 def test_timestamp_module_does_not_export_duplicate_sync_checks():

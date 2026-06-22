@@ -82,7 +82,6 @@ DatasetLint uses defaults when no config is provided. A dataset can include `dat
 ```yaml
 timestamp_gap_threshold_sec: 0.5
 max_pairwise_sync_gap_sec: 0.05
-max_timestamp_gap_sec: 0.5
 min_overlap_ratio: 0.8
 frequency_jitter_ratio: 0.2
 label_max_position_jump_px: 200
@@ -102,8 +101,8 @@ expected_sensor_rates:
 
 The YAML reader intentionally supports this simple shape without adding a runtime YAML dependency.
 
-`timestamp_gap_threshold_sec` controls the general timestamp check across all loaded CSV files.
-`max_timestamp_gap_sec` controls sync diagnostics and stats for burst-sized gaps in sensor streams.
+`timestamp_gap_threshold_sec` controls both the general timestamp gap check and sensor-stream
+burst-gap diagnostics.
 
 ## Folder Dataset Contract
 

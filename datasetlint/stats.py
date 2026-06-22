@@ -213,7 +213,7 @@ def _missing_frame_counts(
             counts[sensor] = 0
             continue
         gaps = timestamps.diff().dropna()
-        counts[sensor] = int((gaps > config.max_timestamp_gap_sec).sum())
+        counts[sensor] = int((gaps > config.timestamp_gap_threshold_sec).sum())
     return counts
 
 

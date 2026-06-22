@@ -292,7 +292,7 @@ def _build_stats(ctx: DatasetContext, issues: list[Issue]) -> dict[str, Any]:
 
 def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Check, ...]:
     if checks is None:
-        return CHECKS
+        return _deduplicate_overlapping_checks(CHECKS)
     names: list[str] = []
     if isinstance(checks, str):
         names.extend(name.strip().lower() for name in checks.split(",") if name.strip())
@@ -300,7 +300,7 @@ def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Ch
         for item in checks:
             names.extend(name.strip().lower() for name in item.split(",") if name.strip())
     if not names or names == ["all"]:
-        return CHECKS
+        return _deduplicate_overlapping_checks(CHECKS)
 
     selected: list[Check] = []
     seen: set[Check] = set()
@@ -318,7 +318,16 @@ def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Ch
             if check not in seen:
                 selected.append(check)
                 seen.add(check)
-    return tuple(selected)
+    return _deduplicate_overlapping_checks(tuple(selected))
+
+
+def _deduplicate_overlapping_checks(selected: tuple[Check, ...]) -> tuple[Check, ...]:
+    if (
+        timestamps.check_large_timestamp_gaps not in selected
+        or sync.check_missing_frame_bursts not in selected
+    ):
+        return selected
+    return tuple(check for check in selected if check is not sync.check_missing_frame_bursts)
 
 
 def validate_checks(checks: str | list[str] | tuple[str, ...] | None) -> None:
