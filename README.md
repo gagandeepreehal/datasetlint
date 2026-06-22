@@ -8,7 +8,7 @@
 
 DatasetLint catches timestamp drift, missing frames, broken calibration, invalid labels, and trajectory anomalies before they poison Physical AI training and evaluation pipelines.
 
-DatasetLint is a lightweight, standalone Python library for validating folder-based robotics datasets. It runs on a MacBook without robots, simulators, GPUs, ROS, cloud services, or large models.
+DatasetLint is a lightweight, standalone Python library for validating folder-based robotics datasets. It runs without robots, simulators, GPUs, ROS, cloud services, or large models.
 
 Documentation: https://gagandeepreehal.github.io/datasetlint/
 
