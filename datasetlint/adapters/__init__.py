@@ -60,8 +60,8 @@ def get_adapter(path: str | Path, name: str = "auto") -> DatasetAdapter:
         for adapter in _ADAPTERS:
             if adapter.name == normalized_name:
                 return adapter
-        known = ", ".join(adapter.name for adapter in _ADAPTERS)
-        raise ValueError(f"Unknown adapter '{name}'. Known adapters: {known}, auto.")
+        valid = ", ".join(adapter.name for adapter in _ADAPTERS)
+        raise ValueError(f"Unknown adapter '{name}'. Valid adapters: {valid}, auto.")
 
     for adapter in _ADAPTERS:
         if adapter.can_load(path):

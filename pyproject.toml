@@ -41,6 +41,11 @@ dev = [
 [project.scripts]
 datasetlint = "datasetlint.cli:app"
 
+[project.urls]
+Homepage = "https://github.com/gagandeepreehal/datasetlint"
+Source = "https://github.com/gagandeepreehal/datasetlint"
+"Bug Tracker" = "https://github.com/gagandeepreehal/datasetlint/issues"
+
 [tool.setuptools.packages.find]
 include = ["datasetlint*"]
 

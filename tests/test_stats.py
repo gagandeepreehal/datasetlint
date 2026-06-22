@@ -12,6 +12,11 @@ def test_stats_generation(tmp_path):
     assert stats.duration_sec == 0.2
     assert stats.frame_counts["camera_front"] == 3
     assert stats.frame_counts["imu"] == 21
+    assert stats.inferred_rates_hz["imu"] == 100.0
     assert stats.label_class_counts == {"car": 3}
     assert stats.confidence_summary.count == 3
     assert stats.track_length_summary.median == 3
+
+    markdown = stats.to_markdown()
+    assert "| camera_front | 3 | 10.000 | 0 |" in markdown
+    assert "| imu | 21 | 100.000 | 0 |" in markdown

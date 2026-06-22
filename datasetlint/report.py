@@ -51,7 +51,7 @@ class LintReport(BaseModel):
         if self.stats:
             lines.extend(["## Stats", ""])
             for key, value in sorted(self.stats.items()):
-                lines.append(f"- `{key}`: `{value}`")
+                lines.extend(_format_markdown_stat(key, value))
             lines.append("")
         lines.extend(
             [
@@ -86,6 +86,18 @@ def _escape_markdown(value: str) -> str:
     return value.replace("|", "\\|")
 
 
+def _format_markdown_stat(key: str, value: Any) -> list[str]:
+    if isinstance(value, dict | list):
+        return [
+            f"- `{_escape_markdown(key)}`:",
+            "",
+            "```json",
+            json.dumps(value, indent=2, sort_keys=True, default=str),
+            "```",
+        ]
+    return [f"- `{_escape_markdown(key)}`: `{json.dumps(value, sort_keys=True, default=str)}`"]
+
+
 def should_fail(report: LintReport, fail_on: Severity) -> bool:
     counts = report.count_by_severity()
     if fail_on == "error":
@@ -93,4 +105,3 @@ def should_fail(report: LintReport, fail_on: Severity) -> bool:
     if fail_on == "warning":
         return counts["error"] > 0 or counts["warning"] > 0
     return len(report.issues) > 0
-

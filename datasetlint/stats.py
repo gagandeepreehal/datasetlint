@@ -59,7 +59,7 @@ class DatasetStats(BaseModel):
         ]
         for sensor in self.sensors:
             frames = self.frame_counts.get(sensor, 0)
-            rate = _format_optional(self.inferred_rates_hz.get(sensor))
+            rate = _format_rate(self.inferred_rates_hz.get(sensor))
             missing = self.missing_frame_counts.get(sensor, 0)
             lines.append(
                 f"| {sensor} | {frames} | {rate} | {missing} |"
@@ -149,7 +149,7 @@ def _inferred_rate(frame: pd.DataFrame) -> float | None:
     gaps = gaps[gaps > 0]
     if gaps.empty:
         return None
-    return float(1.0 / gaps.median())
+    return round(float(1.0 / gaps.median()), 6)
 
 
 def _label_class_counts(label_frames: dict[str, pd.DataFrame]) -> dict[str, int]:
@@ -244,3 +244,9 @@ def _format_optional(value: float | None) -> str:
     if value is None:
         return ""
     return f"{value:.6g}"
+
+
+def _format_rate(value: float | None) -> str:
+    if value is None:
+        return ""
+    return f"{value:.3f}"

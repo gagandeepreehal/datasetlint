@@ -2,6 +2,12 @@
 
 Use this before tagging a DatasetLint v0.1 release.
 
+Run the automated release gate first:
+
+```bash
+make release-check
+```
+
 - Run `pytest`.
 - Run `ruff check .`.
 - Run `mypy datasetlint`.

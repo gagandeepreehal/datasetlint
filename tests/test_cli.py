@@ -60,3 +60,34 @@ def test_cli_adapters_json(tmp_path):
 
     assert result.exit_code == 0
     assert '"folder"' in result.stdout
+
+
+def test_cli_version_flag():
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["--version"])
+
+    assert result.exit_code == 0
+    assert result.stdout.strip() == "datasetlint 0.1.0"
+
+
+def test_cli_invalid_checks_returns_usage_error(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    runner = CliRunner()
+
+    result = runner.invoke(app, [str(dataset), "--checks", "bad_group"])
+
+    assert result.exit_code == 2
+    assert "Error: Unknown check group 'bad_group'. Valid groups:" in result.stderr
+    assert "Traceback" not in result.output
+
+
+def test_cli_invalid_adapter_returns_usage_error(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    runner = CliRunner()
+
+    result = runner.invoke(app, [str(dataset), "--adapter", "foobar"])
+
+    assert result.exit_code == 2
+    assert "Error: Unknown adapter 'foobar'. Valid adapters:" in result.stderr
+    assert "Traceback" not in result.output
