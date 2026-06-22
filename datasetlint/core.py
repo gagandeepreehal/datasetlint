@@ -102,6 +102,24 @@ def lint_dataset(
 
     dataset_path = Path(path).expanduser().resolve()
     lint_config = load_config(dataset_path, config)
+    try:
+        selected_checks = _select_checks(checks)
+    except ValueError as exc:
+        issue = make_issue(
+            "select_checks",
+            "error",
+            str(exc),
+            file=str(dataset_path),
+        )
+        return LintReport(
+            dataset_path=str(dataset_path),
+            issues=[issue],
+            stats={
+                "issue_count": 1,
+                "issue_count_by_severity": {"info": 0, "warning": 0, "error": 1},
+            },
+            passed=False,
+        )
     selected_adapter = _select_adapter(dataset_path, adapter)
     if not isinstance(selected_adapter, FolderAdapter):
         issue = make_issue(
@@ -123,7 +141,7 @@ def lint_dataset(
 
     issues: list[Issue] = []
     issues.extend(ctx.load_issues)
-    for check in _select_checks(checks):
+    for check in selected_checks:
         issues.extend(check(ctx))
 
     stats = _build_stats(ctx, issues)
@@ -234,7 +252,15 @@ def _load_csv_dir(
     paths = stemmed_csv_files(dataset_path / folder_name)
     for name, path in paths.items():
         try:
-            frames[name] = read_csv(path)
+            frame = read_csv(path)
+            if (
+                folder_name == "sensors"
+                and "camera" in name
+                and "path" not in frame.columns
+                and "filename" in frame.columns
+            ):
+                frame = frame.rename(columns={"filename": "path"})
+            frames[name] = frame
         except EmptyDataError:
             continue
         except (ParserError, UnicodeDecodeError, ValueError) as exc:
@@ -285,14 +311,20 @@ def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Ch
         else:
             maybe_group = CHECK_GROUPS.get(name)
             if maybe_group is None:
-                known = ", ".join(sorted([*CHECK_GROUPS, "all"]))
-                raise ValueError(f"Unknown check group '{name}'. Known groups: {known}.")
+                valid = ", ".join(sorted([*CHECK_GROUPS, "all"]))
+                raise ValueError(f"Unknown check group '{name}'. Valid groups: {valid}.")
             group = maybe_group
         for check in group:
             if check not in seen:
                 selected.append(check)
                 seen.add(check)
     return tuple(selected)
+
+
+def validate_checks(checks: str | list[str] | tuple[str, ...] | None) -> None:
+    """Raise ``ValueError`` when a check selection is not valid."""
+
+    _select_checks(checks)
 
 
 def _select_adapter(dataset_path: Path, adapter: str) -> DatasetAdapter:

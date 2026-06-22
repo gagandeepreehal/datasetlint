@@ -11,8 +11,9 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from datasetlint import __version__
 from datasetlint.adapters import detect_adapters
-from datasetlint.core import lint_dataset
+from datasetlint.core import lint_dataset, validate_checks
 from datasetlint.diff import DatasetDiffReport, compare_datasets
 from datasetlint.formatters.console import print_report
 from datasetlint.report import should_fail
@@ -31,6 +32,12 @@ class FailLevel(str, Enum):
     error = "error"
     warning = "warning"
     info = "info"
+
+
+def _version_callback(value: bool | None) -> None:
+    if value:
+        typer.echo(f"datasetlint {__version__}")
+        raise typer.Exit()
 
 
 @app.command()
@@ -57,11 +64,21 @@ def main(
         str,
         typer.Option("--adapter", help="Dataset adapter name: folder or auto."),
     ] = "folder",
+    version: Annotated[
+        bool | None,
+        typer.Option(
+            "--version",
+            callback=_version_callback,
+            is_eager=True,
+            help="Show DatasetLint version and exit.",
+        ),
+    ] = None,
     fail_on_regression: Annotated[
         bool,
         typer.Option("--fail-on-regression", help="Exit non-zero when diff regressions exist."),
     ] = False,
 ) -> None:
+    del version
     if not args:
         _usage_error("Provide a dataset path, stats DATASET, diff OLD NEW, or adapters DATASET.")
 
@@ -78,7 +95,14 @@ def main(
 
     if len(args) != 1:
         _usage_error("Lint expects one dataset path.")
-    report = lint_dataset(path=Path(command), config=config, checks=checks, adapter=adapter)
+    try:
+        validate_checks(checks)
+    except ValueError as exc:
+        _usage_error(str(exc))
+    try:
+        report = lint_dataset(path=Path(command), config=config, checks=checks, adapter=adapter)
+    except ValueError as exc:
+        _usage_error(str(exc))
     if format is OutputFormat.json:
         typer.echo(report.to_json())
     elif format is OutputFormat.markdown:

@@ -14,7 +14,7 @@ def print_report(report: LintReport, console: Console | None = None) -> None:
     output.print(report.summary())
     table = Table(title="Issues")
     table.add_column("Severity")
-    table.add_column("Check")
+    table.add_column("Check", no_wrap=True, min_width=28)
     table.add_column("File")
     table.add_column("Row", justify="right")
     table.add_column("Message")
@@ -34,4 +34,3 @@ def print_report(report: LintReport, console: Console | None = None) -> None:
     output.print(
         f"errors={counts['error']} warnings={counts['warning']} info={counts['info']}"
     )
-

@@ -19,6 +19,14 @@ Common failures include:
 
 ## Installation
 
+DatasetLint requires Python 3.10 or newer. On macOS, the system `python3` may be
+Python 3.9; install a newer interpreter first, for example:
+
+```bash
+brew install python@3.11
+python3.11 -m pip install datasetlint
+```
+
 ```bash
 pip install datasetlint
 ```
@@ -73,8 +81,8 @@ DatasetLint uses defaults when no config is provided. A dataset can include `dat
 
 ```yaml
 timestamp_gap_threshold_sec: 0.5
-max_timestamp_gap_sec: 0.5
 max_pairwise_sync_gap_sec: 0.05
+max_timestamp_gap_sec: 0.5
 min_overlap_ratio: 0.8
 frequency_jitter_ratio: 0.2
 label_max_position_jump_px: 200
@@ -94,6 +102,33 @@ expected_sensor_rates:
 
 The YAML reader intentionally supports this simple shape without adding a runtime YAML dependency.
 
+`timestamp_gap_threshold_sec` controls the general timestamp check across all loaded CSV files.
+`max_timestamp_gap_sec` controls sync diagnostics and stats for burst-sized gaps in sensor streams.
+
+## Folder Dataset Contract
+
+At minimum, a folder dataset includes `metadata.json`, `calibration.json`, and CSV files under
+`sensors/`, `labels/`, or `trajectories/`.
+
+```json
+{
+  "dataset_name": "sample_log",
+  "version": "0.1",
+  "sensors": ["camera_front", "imu", "gps"],
+  "duration_sec": 0.2
+}
+```
+
+Camera sensor CSVs require these columns:
+
+```csv
+timestamp,path,width,height
+0.0,images/000001.jpg,1280,720
+```
+
+`filename` is accepted as an alias for `path` when a camera CSV does not already include `path`.
+IMU CSVs require `timestamp,ax,ay,az,gx,gy,gz`; GPS CSVs require `timestamp,lat,lon,alt`.
+
 ## Example Output
 
 ```text
@@ -101,6 +136,9 @@ DatasetLint report for /path/to/dataset: failed with 3 issue(s) (error=2, warnin
 ```
 
 JSON and Markdown outputs are available through `--format`.
+
+Issue row numbers use spreadsheet-style 1-based rows: the CSV header is row 1 and the first
+data row is row 2.
 
 ## Feature Overview
 

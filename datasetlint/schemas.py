@@ -28,7 +28,6 @@ class LintConfig(BaseModel):
     """Configuration knobs for checks."""
 
     timestamp_gap_threshold_sec: float = 0.5
-    frequency_jitter_fraction: float = 0.25
     frequency_tolerance_fraction: float = 0.30
     missing_frame_gap_multiplier: float = 1.5
     max_speed_mps: float = 70.0

@@ -10,6 +10,9 @@ DatasetLint v0.1 supports simple folder-based datasets with `metadata.json`, `ca
 - Broken paths referenced by CSV rows
 - Duplicate filenames across the dataset tree
 
+Issue row numbers follow spreadsheet convention: the header is row 1 and the first data row is
+row 2.
+
 ## Timestamp Checks
 
 - Non-monotonic timestamps
@@ -31,12 +34,19 @@ datasetlint examples/minimal_dataset --checks sync
 - Unstable sensor frame intervals
 - Per-sensor timing diagnostics in report stats
 
+`max_timestamp_gap_sec` controls missing frame burst diagnostics. The separate
+`timestamp_gap_threshold_sec` setting controls the general timestamp gap check across every
+loaded CSV; tune both when you want matching thresholds for those related reports.
+
 ## Sensor Checks
 
 - Missing required columns
 - Invalid camera width or height
 - Sensor rates that differ from configured expectations
 - Likely missing frames based on timestamp gaps
+
+Camera CSVs require `timestamp`, `path`, `width`, and `height`. `filename` is accepted as a
+compatibility alias for `path` when `path` is absent.
 
 ## Calibration Checks
 
@@ -102,6 +112,7 @@ label_max_size_change_ratio: 3.0
 label_min_track_length: 3
 label_class_switch_threshold: 0
 max_pairwise_sync_gap_sec: 0.05
+timestamp_gap_threshold_sec: 0.5
 max_timestamp_gap_sec: 0.5
 min_overlap_ratio: 0.8
 frequency_jitter_ratio: 0.2
