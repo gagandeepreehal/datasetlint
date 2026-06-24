@@ -7,9 +7,10 @@ datasetlint --help
 datasetlint --version
 ```
 
-The implementation uses one Typer entry point. `lint`, `report`, `stats`, `diff`, and
-`adapters` are positional command words. The shorthand `datasetlint DATASET_PATH`
-still validates a dataset.
+The implementation uses one Typer entry point. `lint`, `report`, `stats`, `diff`,
+`adapters`, `inspect`, `validate`, and `export-manifest` are positional command
+words. The shorthand `datasetlint DATASET_PATH` still validates a native folder
+dataset.
 
 ## Validate
 
@@ -76,12 +77,49 @@ Purpose: compare two folder datasets and classify changes, regressions, and impr
 ## Adapters
 
 ```bash
+datasetlint adapters list
+datasetlint adapters detect DATASET_PATH
 datasetlint adapters DATASET_PATH
 datasetlint adapters DATASET_PATH --format json
 datasetlint adapters DATASET_PATH --format markdown
 ```
 
-Purpose: report which adapters detect a dataset path.
+Purpose: list adapter availability or report which adapters detect a dataset path.
+
+## Inspect Adapter Manifest
+
+```bash
+datasetlint inspect DATASET_PATH --adapter coco
+datasetlint inspect DATASET_PATH --auto-detect
+datasetlint inspect hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
+datasetlint inspect DATASET_PATH --format json
+```
+
+Purpose: load a normalized `DatasetManifest` and print dataset name, adapter,
+sequence count, frame count, sensor streams, annotation count, splits,
+limitations, and warnings.
+
+## Validate Adapter Manifest
+
+```bash
+datasetlint validate DATASET_PATH --adapter kitti
+datasetlint validate DATASET_PATH --auto-detect
+datasetlint validate hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
+datasetlint validate DATASET_PATH --format json
+```
+
+Purpose: run adapter-specific validation and return errors, warnings, coverage,
+and stats. This is separate from `datasetlint lint`, which runs the native
+folder rule engine.
+
+## Export Manifest
+
+```bash
+datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.json
+datasetlint export-manifest DATASET_PATH --auto-detect --output manifest.json
+```
+
+Purpose: write the normalized `DatasetManifest` JSON to a file.
 
 ## Check Groups
 
@@ -108,7 +146,7 @@ datasetlint examples/minimal_dataset --checks labels,sync
 | Code | Meaning |
 | ---: | --- |
 | `0` | Command completed and did not meet the configured failure threshold |
-| `1` | Validation failed the `--fail-on` threshold, or diff regressions were found with `--fail-on-regression` |
+| `1` | Validation failed the `--fail-on` threshold, adapter validation failed, or diff regressions were found with `--fail-on-regression` |
 | `2` | Invalid usage, unknown check group, bad adapter, or invalid config |
 
 ## Output Location

@@ -39,4 +39,4 @@ It is intentionally small:
 
 ## Current Status
 
-DatasetLint v0.1 supports deep validation for its native folder format. MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only in the current codebase.
+DatasetLint v0.1 supports deep rule validation for its native folder format and normalized adapter manifests for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets. Waymo, ROS bag, and MCAP default to lightweight index-only manifests unless optional parser dependencies are installed.

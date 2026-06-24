@@ -1,0 +1,12 @@
+{
+  "annotations": [
+    {
+      "id": "ann-1",
+      "frame_id": "000001",
+      "category": "box",
+      "type": "bbox_2d",
+      "file_path": "images/000001.jpg",
+      "bbox": [1, 2, 3, 4]
+    }
+  ]
+}

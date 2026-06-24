@@ -35,6 +35,32 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+adapters = [
+  "pyyaml",
+]
+hf = [
+  "datasets",
+]
+mcap = [
+  "mcap",
+]
+ros = [
+  "rosbags",
+]
+nuscenes = [
+  "nuscenes-devkit",
+]
+waymo = [
+  "waymo-open-dataset-tf-2-12-0",
+]
+all-adapters = [
+  "pyyaml",
+  "datasets",
+  "mcap",
+  "rosbags",
+  "nuscenes-devkit",
+  "waymo-open-dataset-tf-2-12-0",
+]
 dev = [
   "numpy<2.5",
   "pytest>=7",

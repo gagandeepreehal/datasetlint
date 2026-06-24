@@ -1,0 +1,10 @@
+rosbag2_bagfile_information:
+  topics_with_message_count:
+    - topic_metadata:
+        name: /camera/front/image
+        type: sensor_msgs/msg/Image
+      message_count: 1
+    - topic_metadata:
+        name: /imu
+        type: sensor_msgs/msg/Imu
+      message_count: 2

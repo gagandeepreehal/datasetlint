@@ -1,0 +1,11 @@
+[
+  {
+    "token": "calib-camera",
+    "sensor_token": "sensor-camera",
+    "camera_intrinsic": [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+  },
+  {
+    "token": "calib-lidar",
+    "sensor_token": "sensor-lidar"
+  }
+]
