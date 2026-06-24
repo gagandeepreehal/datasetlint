@@ -1,5 +1,5 @@
 site_name: DatasetLint
-site_description: Lightweight validation for robotics and Physical AI datasets.
+site_description: Lightweight, local-first linting for robotics and physical AI datasets.
 site_url: https://gagandeepreehal.github.io/datasetlint/
 repo_url: https://github.com/gagandeepreehal/datasetlint
 repo_name: gagandeepreehal/datasetlint
@@ -9,17 +9,21 @@ theme:
 
 nav:
   - Home: index.md
+  - Installation: installation.md
   - Getting Started: getting-started.md
+  - Quickstart: quickstart.md
   - Concepts: concepts.md
-  - CLI: cli.md
+  - Dataset Format: dataset-format.md
+  - CLI Reference: cli.md
   - Python API: python-api.md
+  - Rules: rules.md
+  - Checks: checks.md
   - Configuration: configuration.md
   - Reports: reports.md
-  - Quickstart: quickstart.md
-  - Checks: checks.md
   - Stats: stats.md
   - Diff: diff.md
   - Adapters: adapters.md
+  - Development: development.md
   - Roadmap: roadmap.md
   - Release: release.md
   - Release Checklist: release-checklist.md

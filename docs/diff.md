@@ -35,6 +35,12 @@ calibration changes, disappeared label classes, and increased warning/error issu
 counts. Use `--fail-on-regression` in CI to exit non-zero when regressions are
 found.
 
+Diff reports are printed to stdout. Redirect JSON or Markdown output when you want an artifact:
+
+```bash
+datasetlint diff old_dataset new_dataset --format json > datasetlint-diff.json
+```
+
 Relevant thresholds:
 
 ```yaml

@@ -1,14 +1,36 @@
 # Roadmap
 
-Near-term:
+This roadmap separates planned work from implemented behavior. Do not treat these items as current features.
 
-- Keep the folder dataset contract stable.
-- Preserve readable CLI errors and deterministic offline tests.
-- Extend report schemas with backwards-compatible fields.
-- Add custom-check and custom-adapter examples as public APIs settle.
+## Short Term
 
-Not planned for v0:
+- More targeted example datasets for individual rule groups.
+- Stronger dataset diff coverage and clearer regression categories.
+- CI examples for common repository layouts.
+- Documentation for rule extension patterns.
+- More report examples and expected-output fixtures.
 
-- Cloud validation.
-- Heavy robotics runtime dependencies.
-- Claims that detection-only adapters fully parse their source formats.
+## Medium Term
+
+- Deep MCAP adapter support.
+- Deep ROS bag adapter support.
+- NuScenes and Waymo conversion or parsing helpers.
+- Richer sensor synchronization checks.
+- Static HTML report output or report UI.
+- Adapter compatibility tests.
+
+## Long Term
+
+- Rule plugin system.
+- Benchmark sample datasets.
+- Large-dataset performance profiling.
+- More configurable validation policies.
+- Optional machine-readable schema export.
+
+## Non-Goals
+
+- Dataset hosting or storage.
+- Dataset version control.
+- Model evaluation.
+- Simulation or replay.
+- Cloud-first dataset management.

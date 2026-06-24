@@ -1,18 +1,44 @@
 ---
 name: Feature request
-about: Suggest a check, adapter, report field, or workflow improvement
+about: Suggest a rule, adapter, report, config, or developer-experience improvement
 title: "[Feature]: "
 labels: enhancement
+assignees: ""
 ---
 
-## Use case
+## Problem
 
-What dataset problem should DatasetLint help with?
+What dataset validation problem are you trying to solve?
 
-## Proposed behavior
+## Proposed Solution
 
-Describe the command, API, report field, or adapter behavior you expect.
+Describe the behavior you want.
 
-## Constraints
+## Dataset Format Involved
 
-Note any sample data, dependency, runtime, or offline-use constraints.
+- Native folder
+- MCAP
+- ROS bag
+- NuScenes
+- Waymo
+- Custom
+- Other:
+
+## Area
+
+- Rule
+- Adapter
+- Reporting
+- Configuration
+- CLI
+- Python API
+- Documentation
+- CI
+
+## Alternatives Considered
+
+What workarounds or alternatives have you tried?
+
+## Example
+
+If possible, include a tiny synthetic dataset shape or command.

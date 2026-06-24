@@ -12,10 +12,9 @@ passes.
 - `CHANGELOG.md`, `CITATION.cff`, and `pyproject.toml` all contain the release
   version.
 
-As of 2026-06-23, `https://pypi.org/pypi/datasetlint/json` returned HTTP 404,
-which means the project name was not published on PyPI at verification time.
-Claim the name by performing the first trusted-publishing release from this
-repository before announcing `pip install datasetlint`.
+Confirm the `datasetlint` PyPI project is owned by the maintainer before
+announcing `pip install datasetlint`. If the name is not owned yet, claim it by
+performing the first trusted-publishing release from this repository.
 
 ## Release Gate
 

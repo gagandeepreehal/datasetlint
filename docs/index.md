@@ -1,30 +1,42 @@
 # DatasetLint
 
-DatasetLint validates folder-based robotics and Physical AI datasets before they enter training, evaluation, or analysis pipelines.
+DatasetLint validates local robotics and physical AI datasets before they enter training, evaluation, or analysis pipelines.
 
 It is intentionally small:
 
 - Python 3.10+
-- Pure Python runtime
-- CLI and importable API
-- No ROS, simulator, GPU, cloud, or model dependency
+- local files in, report out
+- CLI and importable Python API
+- no ROS, simulator, GPU, cloud, or model dependency
+- native support for the folder CSV/JSON dataset format
 
-Start with the quickstart, review the supported checks, inspect stats and diffs,
-and use the release checklist before tagging a package release.
+## Start Here
 
-Core docs:
-
+- [Installation](installation.md)
 - [Getting Started](getting-started.md)
-- [Concepts](concepts.md)
-- [CLI](cli.md)
+- [Quickstart](quickstart.md)
+- [Dataset Format](dataset-format.md)
+- [CLI Reference](cli.md)
 - [Python API](python-api.md)
+
+## Core References
+
+- [Concepts](concepts.md)
+- [Rules](rules.md)
+- [Checks](checks.md)
 - [Configuration](configuration.md)
 - [Reports](reports.md)
-- [Quickstart](quickstart.md)
-- [Checks](checks.md)
 - [Stats](stats.md)
 - [Diff](diff.md)
 - [Adapters](adapters.md)
+
+## Maintainer And Contributor Docs
+
+- [Development](development.md)
 - [Roadmap](roadmap.md)
 - [Release](release.md)
 - [Release Checklist](release-checklist.md)
+
+## Current Status
+
+DatasetLint v0.1 supports deep validation for its native folder format. MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only in the current codebase.

@@ -2,193 +2,343 @@
 
 [![CI](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml)
 [![Docs](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-DatasetLint catches timestamp drift, missing frames, broken calibration, invalid labels, and trajectory anomalies before they poison Physical AI training and evaluation pipelines.
+DatasetLint is a lightweight, local-first linting toolkit for robotics and physical AI datasets. It checks dataset structure, metadata, timestamps, labels, calibration, trajectories, simple distribution stats, dataset diffs, and adapter compatibility before bad data reaches training or evaluation.
 
-DatasetLint is a lightweight, standalone Python library for validating folder-based robotics datasets. It runs without robots, simulators, GPUs, ROS, cloud services, or large models.
+It runs locally on folder-based datasets with Python, CSV, and JSON. It does not require robots, simulators, GPUs, ROS, cloud services, or model runtimes.
 
-Documentation: https://gagandeepreehal.github.io/datasetlint/
+Documentation: [DatasetLint docs](https://gagandeepreehal.github.io/datasetlint/)
 
-## Why Robotics Datasets Fail
+## Why This Exists
 
-Robotics logs mix sensor streams, metadata, labels, calibration, and trajectories. Small inconsistencies often surface much later as bad training data, misleading evaluations, or broken replay tooling. DatasetLint checks those issues at the dataset folder boundary.
+Robotics datasets often fail in quiet ways:
 
-Common failures include:
+- dataset schema drift between collection, labeling, and training
+- broken or duplicated timestamps
+- missing metadata, calibration, sensor files, or referenced frames
+- inconsistent labels and track IDs
+- silent frame drops or distribution shifts
+- adapter-specific ingestion problems discovered too late
 
-- Missing metadata, calibration, sensor CSVs, or referenced image files
-- Duplicate, non-monotonic, or non-overlapping timestamps
-- Missing sensor columns, invalid camera dimensions, and unstable rates
-- Malformed intrinsics, extrinsics, and quaternion values
-- Invalid label confidence, label geometry, and track class drift
-- Unrealistic speed, acceleration, yaw, or stationary trajectories
+DatasetLint catches those issues at the dataset folder boundary so teams can fail fast in local development and CI.
+
+## Who It Is For
+
+- robotics ML engineers validating training and evaluation data
+- physical AI teams maintaining local dataset collections
+- dataset maintainers reviewing schema and metadata quality
+- researchers sharing small reproducible datasets
+- CI users blocking bad dataset changes before merge
+
+## Current Checks
+
+DatasetLint v0.1 supports the native folder dataset format. Current checks include:
+
+- required `metadata.json` and `calibration.json`
+- empty CSV files, broken referenced paths, and duplicate filenames
+- metadata schema, declared sensors, duration consistency, and version presence
+- monotonic, duplicate, and large-gap timestamps
+- camera, IMU, GPS, and generic sensor columns
+- camera dimensions, expected sensor rates, and likely missing frames
+- sensor time overlap, start offsets, pairwise sync gaps, burst gaps, and jitter
+- calibration intrinsics, extrinsics, and quaternion normalization
+- label columns, confidence, geometry, timestamp range, class switches, duplicate tracks, short tracks, missing labels, box jumps, and size changes
+- trajectory columns, finite values, speed, acceleration, yaw range, and stationary motion
+- dataset statistics and folder-to-folder diffs
+- adapter detection for folder, MCAP, ROS bag, NuScenes, and Waymo inputs
+
+MCAP, ROS bag, NuScenes, and Waymo are detection-only in v0.1; deep parsing is planned but not implemented.
 
 ## Installation
 
-DatasetLint requires Python 3.10 or newer. On macOS, the system `python3` may be
-Python 3.9; install a newer interpreter first, for example:
+DatasetLint requires Python 3.10 or newer. Install from source:
 
 ```bash
-brew install python@3.11
-python3.11 -m pip install -e ".[dev]"
-```
-
-```bash
-python -m pip install -e ".[dev]"
-```
-
-The project is prepared for a future PyPI release, but this README does not assume one has been
-published. After publication, the intended install command is `python -m pip install datasetlint`.
-
-For local development:
-
-```bash
+git clone https://github.com/gagandeepreehal/datasetlint.git
+cd datasetlint
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
 python -m pip install -e ".[dev,docs]"
 ```
 
-## CLI Usage
+Use `python3.10`, `python3.11`, or `python3.12` if that is the executable name on your machine. The macOS system `python3` may be Python 3.9, which is too old for this project.
+
+This repository has publishing metadata and a publish workflow, but this checkout has no release tags. Until the first PyPI release is published, use the source install above instead of `pip install datasetlint`.
+
+## Quickstart
+
+Validate the passing example dataset:
 
 ```bash
 datasetlint lint examples/minimal_dataset
-datasetlint report examples/minimal_dataset --out report.json
 datasetlint examples/minimal_dataset
-datasetlint examples/minimal_dataset --checks labels
-datasetlint examples/minimal_dataset --checks sync
-datasetlint examples/minimal_dataset --adapter auto
-datasetlint examples/minimal_dataset --format json
-datasetlint examples/minimal_dataset --format markdown
-datasetlint lint examples/broken_dataset --fail-on error
-datasetlint stats examples/minimal_dataset --format console
-datasetlint stats examples/minimal_dataset --format json
-datasetlint diff examples/minimal_dataset examples/broken_dataset
-datasetlint diff old_dataset new_dataset --fail-on-regression
-datasetlint adapters examples/minimal_dataset
 ```
 
-## Python Usage
+Expected result:
+
+```text
+DatasetLint report for .../examples/minimal_dataset: passed with 0 issue(s) (error=0, warning=0, info=0).
+```
+
+Run a focused check group:
+
+```bash
+datasetlint examples/minimal_dataset --checks labels
+datasetlint examples/minimal_dataset --checks sync
+```
+
+Render machine-readable output:
+
+```bash
+datasetlint report examples/minimal_dataset --out report.json
+datasetlint examples/minimal_dataset --format json
+datasetlint examples/minimal_dataset --format markdown
+```
+
+Inspect the intentionally failing dataset:
+
+```bash
+datasetlint examples/bad_dataset
+```
+
+`examples/bad_dataset` exits non-zero because it contains missing files, invalid calibration, timestamp issues, label problems, and trajectory anomalies.
+
+## CLI Usage
+
+DatasetLint exposes one console script:
+
+```bash
+datasetlint --help
+datasetlint --version
+```
+
+Validate a dataset:
+
+```bash
+datasetlint lint DATASET_PATH
+datasetlint DATASET_PATH
+datasetlint DATASET_PATH --checks labels,sync
+datasetlint DATASET_PATH --config DATASET_PATH/datasetlint.yaml
+datasetlint DATASET_PATH --adapter folder
+datasetlint DATASET_PATH --adapter auto
+datasetlint DATASET_PATH --format console
+datasetlint DATASET_PATH --format json
+datasetlint DATASET_PATH --format markdown
+datasetlint DATASET_PATH --fail-on warning
+```
+
+Write a JSON validation report:
+
+```bash
+datasetlint report DATASET_PATH --out report.json
+```
+
+Compute statistics:
+
+```bash
+datasetlint stats DATASET_PATH
+datasetlint stats DATASET_PATH --format json
+datasetlint stats DATASET_PATH --format markdown
+```
+
+Compare two datasets:
+
+```bash
+datasetlint diff OLD_DATASET NEW_DATASET
+datasetlint diff OLD_DATASET NEW_DATASET --format json
+datasetlint diff OLD_DATASET NEW_DATASET --fail-on-regression
+```
+
+Inspect adapter detection:
+
+```bash
+datasetlint adapters DATASET_PATH
+datasetlint adapters DATASET_PATH --format json
+```
+
+Exit codes:
+
+- `0`: command completed and did not meet the configured failure threshold
+- `1`: validation failed the `--fail-on` threshold, or diff regressions were found with `--fail-on-regression`
+- `2`: invalid usage, unknown check group, bad adapter, or invalid config
+
+## Python API Usage
 
 ```python
 from datasetlint import compare_datasets, compute_dataset_stats, lint_dataset
-from datasetlint.adapters import get_adapter
+from datasetlint.adapters import detect_adapters, get_adapter
 
-report = lint_dataset(path="examples/minimal_dataset", config=None)
+report = lint_dataset("examples/minimal_dataset")
 print(report.summary())
+print(report.count_by_severity())
 print(report.to_markdown())
 
 label_report = lint_dataset("examples/minimal_dataset", checks="labels")
-sync_report = lint_dataset("examples/minimal_dataset", checks="sync")
+sync_report = lint_dataset("examples/minimal_dataset", checks=["sync"])
+
 stats = compute_dataset_stats("examples/minimal_dataset")
-diff = compare_datasets("old_dataset", "new_dataset")
+print(stats.frame_counts)
+
+diff = compare_datasets("examples/minimal_dataset", "examples/bad_dataset")
+print(diff.summary)
+
+detections = detect_adapters("examples/minimal_dataset")
 adapter = get_adapter("examples/minimal_dataset", "auto")
 ```
 
-Lower-level integrations that already have a `DatasetContext` can also import
-`check_label_consistency` from `datasetlint.checks.labels` and
-`check_sensor_synchronization` from `datasetlint.checks.sync`.
+Public imports from `datasetlint` are `lint_dataset`, `compare_datasets`, `compute_dataset_stats`, `Issue`, `LintConfig`, `LintReport`, `DatasetStats`, and `DatasetDiffReport`.
+
+## Examples
+
+| Path | Expected result | Demonstrates |
+| --- | --- | --- |
+| `examples/minimal_dataset` | pass | valid folder dataset with camera, IMU, GPS, labels, calibration, and trajectory |
+| `examples/bad_dataset` | fail | broad failure surface used for validation and diff examples |
+| `examples/invalid_missing_metadata` | fail | missing `metadata.json` |
+| `examples/invalid_timestamp_drift` | fail with `--fail-on warning` | timestamp gaps and frequency drift |
+| `examples/invalid_label_consistency` | fail | track class switch and duplicate track timestamp |
+
+See [examples/README.md](examples/README.md) for commands and expected outcomes.
 
 ## Configuration
 
-DatasetLint uses defaults when no config is provided. A dataset can include `datasetlint.yaml`:
+DatasetLint uses defaults when no config is provided. A dataset can include `datasetlint.yaml`, or the CLI can receive `--config path/to/datasetlint.yaml`.
+
+Supported keys:
 
 ```yaml
 timestamp_gap_threshold_sec: 0.5
-max_pairwise_sync_gap_sec: 0.05
-min_overlap_ratio: 0.8
-frequency_jitter_ratio: 0.2
+frequency_tolerance_fraction: 0.30
+missing_frame_gap_multiplier: 1.5
+max_speed_mps: 70
+max_accel_mps2: 12
+stationary_distance_threshold_m: 0.05
+duration_tolerance_sec: 1.0
 label_max_position_jump_px: 200
 label_max_size_change_ratio: 3.0
 label_min_track_length: 3
 label_class_switch_threshold: 0
-max_speed_mps: 70
-max_accel_mps2: 12
+max_pairwise_sync_gap_sec: 0.05
+min_overlap_ratio: 0.8
+frequency_jitter_ratio: 0.2
 frame_count_drop_ratio_warning: 0.1
 duration_drop_ratio_warning: 0.1
 issue_regression_severity: warning
 expected_sensor_rates:
   camera_front: 10
+  camera_rear: 10
   imu: 100
   gps: 10
 ```
 
-The YAML reader intentionally supports this simple shape without adding a runtime YAML dependency.
+The config reader intentionally supports a simple YAML subset: scalar `key: value` pairs and one-level maps such as `expected_sensor_rates`. Unknown keys fail validation so stale configs do not silently pass.
 
-`timestamp_gap_threshold_sec` controls both the general timestamp gap check and sensor-stream
-burst-gap diagnostics.
-Unknown or removed config keys fail validation so stale `datasetlint.yaml` files are not silently
-ignored.
+## Reports
 
-## Folder Dataset Contract
+Validation reports include:
 
-At minimum, a folder dataset includes `metadata.json`, `calibration.json`, and CSV files under
-`sensors/`, `labels/`, or `trajectories/`.
+- summary pass/fail state
+- issue severity: `error`, `warning`, or `info`
+- check name
+- file path and 1-based CSV row when available
+- message and structured metadata
+- stats such as issue counts, sensor counts, and sync diagnostics
 
-```json
-{
-  "dataset_name": "sample_log",
-  "version": "0.1",
-  "sensors": ["camera_front", "imu", "gps"],
-  "duration_sec": 0.2
-}
-```
-
-Camera sensor CSVs require these columns:
-
-```csv
-timestamp,path,width,height
-0.0,images/000001.jpg,1280,720
-```
-
-`filename` is accepted as an alias for `path` when a camera CSV does not already include `path`.
-IMU CSVs require `timestamp,ax,ay,az,gx,gy,gz`; GPS CSVs require `timestamp,lat,lon,alt`.
-
-## Example Output
-
-```text
-DatasetLint report for /path/to/dataset: failed with 3 issue(s) (error=2, warning=1, info=0).
-```
-
-JSON and Markdown outputs are available through `--format`.
-
-Issue row numbers use spreadsheet-style 1-based rows: the CSV header is row 1 and the first
-data row is row 2.
-
-## Feature Overview
-
-- Label consistency checks validate `labels/detections.csv` for required columns, confidence range, positive boxes, duplicate `(timestamp, track_id)` rows, class switches, short tracks, missing in-track timestamps, large box jumps, and abrupt size changes.
-- Sensor synchronization checks report per-sensor timing, inferred rates, overlap duration, pairwise timestamp gaps, missing frame bursts, and frequency jitter.
-- `datasetlint stats` computes dataset distributions for sensors, labels, tracks, trajectories, missing frames, and issue severity counts.
-- `datasetlint diff` compares two datasets and classifies regressions such as removed sensors, frame-count drops, duration drops, calibration changes, disappeared label classes, and increased issue counts.
-- `datasetlint adapters` reports adapter detection. The folder adapter is fully supported; MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only in v0 and raise clear `NotImplementedError` messages for deep parsing.
-
-## Contributing
-
-Keep v0.1 focused on pure Python, typed APIs, local files, and useful error messages. Run:
+Output formats are console, JSON, and Markdown:
 
 ```bash
-pytest
-ruff check .
-mypy datasetlint
+datasetlint examples/minimal_dataset --format console
+datasetlint examples/minimal_dataset --format json
+datasetlint examples/minimal_dataset --format markdown
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, style, tests, and extension guidance.
+Issue row numbers use spreadsheet-style rows: the CSV header is row 1 and the first data row is row 2.
 
-## Roadmap
+## CI Usage
 
-- Keep the folder adapter stable and documented.
-- Add deeper robotics-format adapters only when they can be tested with small local fixtures.
-- Expand report schemas without breaking existing JSON consumers.
-- Keep checks deterministic and offline.
+Minimal GitHub Actions example:
+
+```yaml
+name: Dataset Lint
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  datasetlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -e ".[dev]"
+      - run: datasetlint examples/minimal_dataset
+```
+
+Use `--fail-on warning` for stricter validation, or `datasetlint diff OLD_DATASET NEW_DATASET --fail-on-regression` when comparing dataset revisions.
+
+## Supported Formats And Adapters
+
+| Format or adapter | Status | Notes |
+| --- | --- | --- |
+| Native folder format | supported | JSON metadata and calibration plus CSV sensors, labels, and trajectories |
+| CSV / JSON metadata | supported | Supported inside the native folder format |
+| Custom adapters | experimental | Implement `DatasetAdapter`; only the registry and interface are stable enough for local extension |
+| MCAP | detection-only | Detects `.mcap` files; deep parsing raises `NotImplementedError` |
+| ROS bag | detection-only | Detects `.bag` files; deep parsing raises `NotImplementedError` |
+| NuScenes | detection-only | Detects likely NuScenes metadata folders; deep parsing raises `NotImplementedError` |
+| Waymo | detection-only | Detects `.tfrecord` files; deep parsing raises `NotImplementedError` |
 
 ## Limitations
 
-- DatasetLint validates local file structure and consistency; it does not certify dataset safety,
-  model readiness, policy compliance, or sensor physical correctness.
-- MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only in v0.
-- The YAML config reader intentionally supports a small key-value subset.
+- DatasetLint is not a dataset management platform.
+- DatasetLint is not a model evaluation framework.
+- DatasetLint is not a simulator or replay tool.
+- Current validation is local-first and file-based.
+- Only the native folder adapter deeply loads data in v0.1.
+- Large-dataset performance has not been benchmarked yet.
+- The config reader supports a small YAML subset, not full YAML syntax.
+- Report output is file/terminal oriented; there is no report UI yet.
 
-## Citation
+## Roadmap
 
-If DatasetLint helps your work, cite the repository metadata in [CITATION.cff](CITATION.cff).
+Near term:
 
-DatasetLint is MIT licensed.
+- stronger dataset diff coverage
+- more targeted example datasets
+- CI templates for common repository layouts
+- clearer rule plugin examples
+
+Medium term:
+
+- deep MCAP and ROS bag adapters
+- NuScenes and Waymo conversion or parsing helpers
+- richer sensor synchronization checks
+- report UI or static HTML output
+
+Long term:
+
+- rule plugin system
+- benchmark sample datasets
+- performance profiling on larger logs
+- adapter compatibility test suite
+
+Non-goals:
+
+- replacing dataset version control systems
+- storing or hosting datasets
+- running model evaluation
+- simulating robotics environments
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, tests, linting, type checks, docs, and guidance for adding rules or adapters.
+
+## License
+
+DatasetLint is released under the [MIT License](LICENSE).

@@ -1,0 +1,6 @@
+{
+  "dataset_name": "timestamp_drift",
+  "version": "0.1",
+  "sensors": ["camera_front", "imu"],
+  "duration_sec": 2.0
+}

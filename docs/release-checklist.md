@@ -1,6 +1,6 @@
 # Release Checklist
 
-Use this before tagging a DatasetLint v0.1 release.
+Use this before tagging a DatasetLint release.
 
 Run the automated release gate first:
 
@@ -24,5 +24,5 @@ the worktree.
 - Confirm `LICENSE` is present and uses MIT terms.
 - Confirm `SECURITY.md`, `CITATION.cff`, and `PUBLISHING.md` are current.
 - Confirm the `datasetlint` PyPI project is owned by the maintainer before announcing
-  `pip install datasetlint`.
+  `pip install datasetlint` as the default install path.
 - Confirm GitHub Pages is enabled for the docs workflow.
