@@ -214,9 +214,7 @@ def _compare_duration(
     if delta == 0:
         return
     drop_ratio = (
-        abs(delta) / old_stats.duration_sec
-        if delta < 0 and old_stats.duration_sec > 0
-        else 0.0
+        abs(delta) / old_stats.duration_sec if delta < 0 and old_stats.duration_sec > 0 else 0.0
     )
     severity: Severity = "warning" if drop_ratio > config.duration_drop_ratio_warning else "info"
     change = DatasetChange(
@@ -299,9 +297,7 @@ def _compare_label_classes(
     new_stats: DatasetStats,
     config: LintConfig,
 ) -> None:
-    for class_name in sorted(
-        set(old_stats.label_class_counts) | set(new_stats.label_class_counts)
-    ):
+    for class_name in sorted(set(old_stats.label_class_counts) | set(new_stats.label_class_counts)):
         old_count = old_stats.label_class_counts.get(class_name, 0)
         new_count = new_stats.label_class_counts.get(class_name, 0)
         delta = new_count - old_count

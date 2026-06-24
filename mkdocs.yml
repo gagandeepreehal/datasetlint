@@ -10,6 +10,7 @@ theme:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Getting Started: getting-started.md
   - Quickstart: quickstart.md
   - Concepts: concepts.md
   - Dataset Format: dataset-format.md
@@ -24,6 +25,7 @@ nav:
   - Adapters: adapters.md
   - Development: development.md
   - Roadmap: roadmap.md
+  - Release: release.md
   - Release Checklist: release-checklist.md
 
 strict: true

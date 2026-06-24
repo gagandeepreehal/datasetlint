@@ -7,11 +7,14 @@ datasetlint --help
 datasetlint --version
 ```
 
-The implementation uses one Typer entry point. `stats`, `diff`, and `adapters` are positional command words.
+The implementation uses one Typer entry point. `lint`, `report`, `stats`, `diff`, and
+`adapters` are positional command words. The shorthand `datasetlint DATASET_PATH`
+still validates a dataset.
 
 ## Validate
 
 ```bash
+datasetlint lint DATASET_PATH
 datasetlint DATASET_PATH
 ```
 
@@ -30,11 +33,21 @@ Common options:
 Examples:
 
 ```bash
+datasetlint lint examples/minimal_dataset
 datasetlint examples/minimal_dataset
 datasetlint examples/minimal_dataset --checks labels,sync
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --fail-on warning
 ```
+
+## Report File
+
+```bash
+datasetlint report DATASET_PATH --out datasetlint-report.json
+```
+
+Purpose: write the stable JSON validation report to a file for CI artifacts,
+release evidence, or downstream tooling.
 
 ## Stats
 
@@ -100,9 +113,12 @@ datasetlint examples/minimal_dataset --checks labels,sync
 
 ## Output Location
 
-DatasetLint prints reports to stdout. It does not currently write report files by itself. Redirect output when you want an artifact:
+Validation output prints to stdout by default. Use `datasetlint report --out`
+when you want a JSON artifact, or redirect formatted output when you want a
+captured console or Markdown file:
 
 ```bash
+datasetlint report examples/minimal_dataset --out datasetlint-report.json
 datasetlint examples/minimal_dataset --format json > datasetlint-report.json
 datasetlint examples/minimal_dataset --format markdown > datasetlint-report.md
 ```

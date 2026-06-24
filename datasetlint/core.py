@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -119,6 +120,10 @@ def lint_dataset(
                 "issue_count_by_severity": {"info": 0, "warning": 0, "error": 1},
             },
             passed=False,
+            checks_run=[],
+            adapter={"name": adapter},
+            config=_config_dict(lint_config),
+            dataset_fingerprint=_dataset_fingerprint(dataset_path),
         )
     selected_adapter = _select_adapter(dataset_path, adapter)
     if not isinstance(selected_adapter, FolderAdapter):
@@ -135,6 +140,13 @@ def lint_dataset(
             issues=[issue],
             stats={"issue_count": 1},
             passed=False,
+            checks_run=[],
+            adapter={
+                "name": selected_adapter.name,
+                "mode": "detection-only",
+            },
+            config=_config_dict(lint_config),
+            dataset_fingerprint=_dataset_fingerprint(dataset_path),
         )
 
     ctx = _load_context(dataset_path, lint_config)
@@ -151,6 +163,11 @@ def lint_dataset(
         issues=issues,
         stats=stats,
         passed=passed,
+        dataset_summary=_dataset_summary(ctx),
+        checks_run=[check.__name__ for check in selected_checks],
+        adapter={"name": selected_adapter.name, "mode": "folder"},
+        config=_config_dict(lint_config),
+        dataset_fingerprint=_dataset_fingerprint(dataset_path),
     )
 
 
@@ -288,6 +305,59 @@ def _build_stats(ctx: DatasetContext, issues: list[Issue]) -> dict[str, Any]:
         "declared_sensor_count": len(ctx.declared_sensors()),
         "sync": sync.sensor_sync_diagnostics(ctx),
     }
+
+
+def _dataset_summary(ctx: DatasetContext) -> dict[str, Any]:
+    return {
+        "declared_sensors": ctx.declared_sensors(),
+        "available_modalities": _available_modalities(ctx),
+        "sensor_count": len(ctx.sensor_frames),
+        "label_file_count": len(ctx.label_frames),
+        "trajectory_file_count": len(ctx.trajectory_frames),
+        "sensor_frame_counts": {name: len(frame) for name, frame in ctx.sensor_frames.items()},
+        "label_row_counts": {name: len(frame) for name, frame in ctx.label_frames.items()},
+        "trajectory_row_counts": {
+            name: len(frame) for name, frame in ctx.trajectory_frames.items()
+        },
+    }
+
+
+def _available_modalities(ctx: DatasetContext) -> list[str]:
+    modalities: list[str] = []
+    if ctx.sensor_frames:
+        modalities.append("sensors")
+    if ctx.label_frames:
+        modalities.append("labels")
+    if ctx.trajectory_frames:
+        modalities.append("trajectories")
+    if ctx.calibration is not None:
+        modalities.append("calibration")
+    if ctx.metadata is not None:
+        modalities.append("metadata")
+    return modalities
+
+
+def _config_dict(config: LintConfig) -> dict[str, Any]:
+    if hasattr(config, "model_dump"):
+        return config.model_dump()
+    return config.dict()
+
+
+def _dataset_fingerprint(dataset_path: Path) -> str | None:
+    if not dataset_path.exists() or not dataset_path.is_dir():
+        return None
+    digest = hashlib.sha256()
+    for path in sorted(item for item in dataset_path.rglob("*") if item.is_file()):
+        relative = path.relative_to(dataset_path).as_posix()
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(stat.st_size).encode("ascii"))
+        digest.update(b"\0")
+    return f"sha256:{digest.hexdigest()}"
 
 
 def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Check, ...]:

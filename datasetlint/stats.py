@@ -61,9 +61,7 @@ class DatasetStats(BaseModel):
             frames = self.frame_counts.get(sensor, 0)
             rate = _format_rate(self.inferred_rates_hz.get(sensor))
             missing = self.missing_frame_counts.get(sensor, 0)
-            lines.append(
-                f"| {sensor} | {frames} | {rate} | {missing} |"
-            )
+            lines.append(f"| {sensor} | {frames} | {rate} | {missing} |")
         if not self.sensors:
             lines.append("| none | 0 |  | 0 |")
         lines.extend(

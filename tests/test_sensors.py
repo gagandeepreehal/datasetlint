@@ -64,7 +64,6 @@ def test_non_camera_filename_column_is_not_treated_as_path_alias(tmp_path):
     report = lint_dataset(dataset)
 
     assert not any(
-        issue.check_name == "check_broken_paths"
-        and issue.file == "sensors/radar.csv"
+        issue.check_name == "check_broken_paths" and issue.file == "sensors/radar.csv"
         for issue in report.issues
     )

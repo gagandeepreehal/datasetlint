@@ -25,4 +25,3 @@ def test_duplicate_timestamps_returns_warning(tmp_path):
         issue.check_name == "check_duplicate_timestamps" and issue.severity == "warning"
         for issue in report.issues
     )
-

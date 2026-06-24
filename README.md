@@ -73,6 +73,7 @@ This repository has publishing metadata and a publish workflow, but this checkou
 Validate the passing example dataset:
 
 ```bash
+datasetlint lint examples/minimal_dataset
 datasetlint examples/minimal_dataset
 ```
 
@@ -92,6 +93,7 @@ datasetlint examples/minimal_dataset --checks sync
 Render machine-readable output:
 
 ```bash
+datasetlint report examples/minimal_dataset --out report.json
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
 ```
@@ -116,6 +118,7 @@ datasetlint --version
 Validate a dataset:
 
 ```bash
+datasetlint lint DATASET_PATH
 datasetlint DATASET_PATH
 datasetlint DATASET_PATH --checks labels,sync
 datasetlint DATASET_PATH --config DATASET_PATH/datasetlint.yaml
@@ -125,6 +128,12 @@ datasetlint DATASET_PATH --format console
 datasetlint DATASET_PATH --format json
 datasetlint DATASET_PATH --format markdown
 datasetlint DATASET_PATH --fail-on warning
+```
+
+Write a JSON validation report:
+
+```bash
+datasetlint report DATASET_PATH --out report.json
 ```
 
 Compute statistics:

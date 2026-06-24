@@ -8,7 +8,14 @@ datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
 ```
 
-DatasetLint prints reports to stdout. Redirect output when you want files:
+Use the dedicated report command when you want a JSON artifact:
+
+```bash
+datasetlint report examples/minimal_dataset --out datasetlint-report.json
+```
+
+Formatted validation output still prints to stdout. Redirect output when you
+want those representations as files:
 
 ```bash
 datasetlint examples/minimal_dataset --format json > datasetlint-report.json
@@ -22,7 +29,15 @@ HTML output is not implemented in v0.1.
 Python validation returns `LintReport`:
 
 - `dataset_path`
+- `generated_at`
+- `datasetlint_version`
+- `dataset_fingerprint` from a lightweight file-manifest hash
+- `dataset_summary`
+- `checks_run`
+- `adapter`
+- `config`
 - `issues`
+- `findings`
 - `stats`
 - `passed`
 
@@ -36,6 +51,8 @@ Each issue includes:
 - `metadata`
 
 Rows are 1-based CSV rows. The header is row 1 and the first data row is row 2.
+
+The committed JSON schema is `schemas/report.schema.json`.
 
 ## Severity Levels
 

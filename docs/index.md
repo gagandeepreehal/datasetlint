@@ -13,6 +13,7 @@ It is intentionally small:
 ## Start Here
 
 - [Installation](installation.md)
+- [Getting Started](getting-started.md)
 - [Quickstart](quickstart.md)
 - [Dataset Format](dataset-format.md)
 - [CLI Reference](cli.md)
@@ -33,6 +34,7 @@ It is intentionally small:
 
 - [Development](development.md)
 - [Roadmap](roadmap.md)
+- [Release](release.md)
 - [Release Checklist](release-checklist.md)
 
 ## Current Status

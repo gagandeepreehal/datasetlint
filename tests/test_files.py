@@ -42,4 +42,3 @@ def test_broken_image_path_returns_error(tmp_path):
 
     assert report.passed is False
     assert any(issue.check_name == "check_broken_paths" for issue in report.issues)
-
