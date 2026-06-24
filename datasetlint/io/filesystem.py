@@ -13,4 +13,3 @@ def csv_files(folder: Path) -> list[Path]:
 
 def stemmed_csv_files(folder: Path) -> dict[str, Path]:
     return {path.stem: path for path in csv_files(folder)}
-

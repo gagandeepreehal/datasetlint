@@ -1,7 +1,6 @@
 """DatasetLint public API."""
 
-__version__ = "0.1.0"
-
+from datasetlint._version import __version__
 from datasetlint.core import lint_dataset
 from datasetlint.diff import DatasetDiffReport, compare_datasets
 from datasetlint.report import LintReport

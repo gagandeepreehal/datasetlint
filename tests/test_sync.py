@@ -94,6 +94,4 @@ def test_default_checks_do_not_double_report_sensor_timestamp_gap(tmp_path):
 
     for report in reports:
         assert any(issue.check_name == "check_large_timestamp_gaps" for issue in report.issues)
-        assert not any(
-            issue.check_name == "check_missing_frame_bursts" for issue in report.issues
-        )
+        assert not any(issue.check_name == "check_missing_frame_bursts" for issue in report.issues)

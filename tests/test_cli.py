@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import subprocess
 import sys
@@ -75,6 +76,32 @@ def test_cli_version_flag():
     assert result.stdout.strip() == "datasetlint 0.1.0"
 
 
+def test_cli_lint_alias(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["lint", str(dataset), "--format", "json"])
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["passed"] is True
+    assert payload["checks_run"]
+
+
+def test_cli_report_writes_json(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    output = tmp_path / "report.json"
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["report", str(dataset), "--out", str(output)])
+
+    assert result.exit_code == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["datasetlint_version"] == "0.1.0"
+    assert payload["findings"] == payload["issues"]
+    assert payload["adapter"]["name"] == "folder"
+
+
 def test_python_module_help_entrypoint():
     result = subprocess.run(
         [sys.executable, "-m", "datasetlint", "--help"],
@@ -138,9 +165,7 @@ def test_cli_stats_rejects_removed_config_key(tmp_path):
 def test_cli_diff_rejects_removed_config_key(tmp_path):
     old_dataset = write_good_dataset(tmp_path / "old")
     new_dataset = write_good_dataset(tmp_path / "new")
-    (new_dataset / "datasetlint.yaml").write_text(
-        "max_timestamp_gap_sec: 1.0\n", encoding="utf-8"
-    )
+    (new_dataset / "datasetlint.yaml").write_text("max_timestamp_gap_sec: 1.0\n", encoding="utf-8")
     runner = CliRunner()
 
     result = runner.invoke(app, ["diff", str(old_dataset), str(new_dataset)])

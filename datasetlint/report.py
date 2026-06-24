@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from datasetlint._version import __version__
 from datasetlint.schemas import Issue, Severity
 
 
@@ -17,6 +19,15 @@ class LintReport(BaseModel):
     issues: list[Issue] = Field(default_factory=list)
     stats: dict[str, Any] = Field(default_factory=dict)
     passed: bool
+    generated_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    )
+    dataset_summary: dict[str, Any] = Field(default_factory=dict)
+    checks_run: list[str] = Field(default_factory=list)
+    adapter: dict[str, Any] = Field(default_factory=dict)
+    config: dict[str, Any] = Field(default_factory=dict)
+    dataset_fingerprint: str | None = None
+    datasetlint_version: str = __version__
 
     def count_by_severity(self) -> dict[str, int]:
         counts = {"info": 0, "warning": 0, "error": 0}
@@ -43,6 +54,9 @@ class LintReport(BaseModel):
             "",
             f"- Dataset: `{self.dataset_path}`",
             f"- Status: `{'passed' if self.passed else 'failed'}`",
+            f"- Generated at: `{self.generated_at}`",
+            f"- DatasetLint version: `{self.datasetlint_version}`",
+            f"- Dataset fingerprint: `{self.dataset_fingerprint or ''}`",
             f"- Errors: `{counts['error']}`",
             f"- Warnings: `{counts['warning']}`",
             f"- Info: `{counts['info']}`",
@@ -78,8 +92,11 @@ class LintReport(BaseModel):
 
     def _as_dict(self) -> dict[str, Any]:
         if hasattr(self, "model_dump"):
-            return self.model_dump()
-        return self.dict()
+            data = self.model_dump()
+        else:
+            data = self.dict()
+        data["findings"] = data["issues"]
+        return data
 
 
 def _escape_markdown(value: str) -> str:

@@ -31,6 +31,4 @@ def print_report(report: LintReport, console: Console | None = None) -> None:
                 issue.message,
             )
     output.print(table)
-    output.print(
-        f"errors={counts['error']} warnings={counts['warning']} info={counts['info']}"
-    )
+    output.print(f"errors={counts['error']} warnings={counts['warning']} info={counts['info']}")

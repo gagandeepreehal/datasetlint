@@ -25,4 +25,3 @@ def test_unrealistic_speed_returns_warning(tmp_path):
         issue.check_name == "check_unrealistic_speed" and issue.severity == "warning"
         for issue in report.issues
     )
-

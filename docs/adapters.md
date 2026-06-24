@@ -45,3 +45,25 @@ in v0:
 
 Deep parsing raises `NotImplementedError` with an actionable message. Convert
 these datasets to the folder CSV format before linting with v0.
+
+## Custom Adapter Sketch
+
+Custom adapters should isolate format-specific errors and return clear messages:
+
+```python
+from pathlib import Path
+
+from datasetlint.adapters import DatasetAdapter
+
+
+class MyAdapter(DatasetAdapter):
+    name = "my-format"
+
+    def can_load(self, path: Path) -> bool:
+        return (path / "my_manifest.json").is_file()
+
+    def load_metadata(self, path: Path) -> dict[str, object]:
+        if not self.can_load(path):
+            raise ValueError("my-format requires my_manifest.json")
+        return {"dataset_name": path.name}
+```

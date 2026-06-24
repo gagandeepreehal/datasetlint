@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gagandeepreehal.github.io/datasetlint/schemas/report.schema.json",
+  "title": "DatasetLintReport",
+  "type": "object",
+  "required": [
+    "dataset_path",
+    "generated_at",
+    "datasetlint_version",
+    "passed",
+    "dataset_summary",
+    "checks_run",
+    "issues",
+    "findings",
+    "stats",
+    "adapter",
+    "config"
+  ],
+  "properties": {
+    "dataset_path": { "type": "string" },
+    "generated_at": { "type": "string" },
+    "datasetlint_version": { "type": "string" },
+    "dataset_fingerprint": { "type": ["string", "null"] },
+    "passed": { "type": "boolean" },
+    "dataset_summary": { "type": "object" },
+    "checks_run": { "type": "array", "items": { "type": "string" } },
+    "issues": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "stats": { "type": "object" },
+    "adapter": { "type": "object" },
+    "config": { "type": "object" }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["check_name", "severity", "message", "metadata"],
+      "properties": {
+        "check_name": { "type": "string" },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "message": { "type": "string" },
+        "file": { "type": ["string", "null"] },
+        "row": { "type": ["integer", "null"] },
+        "metadata": { "type": "object" }
+      }
+    }
+  }
+}

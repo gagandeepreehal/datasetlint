@@ -20,8 +20,7 @@ class NuScenesAdapter(DatasetAdapter):
         if not dataset_path.is_dir():
             return False
         if any(
-            child.is_dir() and child.name.startswith("v1.0-")
-            for child in dataset_path.iterdir()
+            child.is_dir() and child.name.startswith("v1.0-") for child in dataset_path.iterdir()
         ):
             return True
         return any((dataset_path / name).is_file() for name in ("scene.json", "sample.json"))

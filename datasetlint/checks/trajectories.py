@@ -151,4 +151,3 @@ def _speeds(frame: pd.DataFrame) -> pd.Series:
     vx = pd.to_numeric(frame["vx"], errors="coerce")
     vy = pd.to_numeric(frame["vy"], errors="coerce")
     return np.hypot(vx, vy)
-

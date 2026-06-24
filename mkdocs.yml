@@ -9,11 +9,19 @@ theme:
 
 nav:
   - Home: index.md
+  - Getting Started: getting-started.md
+  - Concepts: concepts.md
+  - CLI: cli.md
+  - Python API: python-api.md
+  - Configuration: configuration.md
+  - Reports: reports.md
   - Quickstart: quickstart.md
   - Checks: checks.md
   - Stats: stats.md
   - Diff: diff.md
   - Adapters: adapters.md
+  - Roadmap: roadmap.md
+  - Release: release.md
   - Release Checklist: release-checklist.md
 
 strict: true

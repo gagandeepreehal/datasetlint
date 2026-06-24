@@ -16,4 +16,3 @@ def test_malformed_calibration_returns_error(tmp_path):
 
     assert report.passed is False
     assert any(issue.check_name == "check_intrinsics_shape" for issue in report.issues)
-

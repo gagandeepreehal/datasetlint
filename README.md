@@ -2,8 +2,7 @@
 
 [![CI](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml)
 [![Docs](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml)
-[![PyPI](https://img.shields.io/pypi/v/datasetlint.svg)](https://pypi.org/project/datasetlint/)
-[![Python](https://img.shields.io/pypi/pyversions/datasetlint.svg)](https://pypi.org/project/datasetlint/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 DatasetLint catches timestamp drift, missing frames, broken calibration, invalid labels, and trajectory anomalies before they poison Physical AI training and evaluation pipelines.
@@ -32,15 +31,15 @@ Python 3.9; install a newer interpreter first, for example:
 
 ```bash
 brew install python@3.11
-python3.11 -m pip install datasetlint
+python3.11 -m pip install -e ".[dev]"
 ```
 
 ```bash
-pip install datasetlint
+python -m pip install -e ".[dev]"
 ```
 
-The `datasetlint` PyPI name was unclaimed when checked on 2026-06-23. The command above is the
-intended public install path after the first PyPI release is published from this repository.
+The project is prepared for a future PyPI release, but this README does not assume one has been
+published. After publication, the intended install command is `python -m pip install datasetlint`.
 
 For local development:
 
@@ -51,16 +50,18 @@ python -m pip install -e ".[dev,docs]"
 ## CLI Usage
 
 ```bash
+datasetlint lint examples/minimal_dataset
+datasetlint report examples/minimal_dataset --out report.json
 datasetlint examples/minimal_dataset
 datasetlint examples/minimal_dataset --checks labels
 datasetlint examples/minimal_dataset --checks sync
 datasetlint examples/minimal_dataset --adapter auto
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
-datasetlint examples/bad_dataset --fail-on error
+datasetlint lint examples/broken_dataset --fail-on error
 datasetlint stats examples/minimal_dataset --format console
 datasetlint stats examples/minimal_dataset --format json
-datasetlint diff examples/minimal_dataset examples/bad_dataset
+datasetlint diff examples/minimal_dataset examples/broken_dataset
 datasetlint diff old_dataset new_dataset --fail-on-regression
 datasetlint adapters examples/minimal_dataset
 ```
@@ -169,5 +170,25 @@ pytest
 ruff check .
 mypy datasetlint
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, style, tests, and extension guidance.
+
+## Roadmap
+
+- Keep the folder adapter stable and documented.
+- Add deeper robotics-format adapters only when they can be tested with small local fixtures.
+- Expand report schemas without breaking existing JSON consumers.
+- Keep checks deterministic and offline.
+
+## Limitations
+
+- DatasetLint validates local file structure and consistency; it does not certify dataset safety,
+  model readiness, policy compliance, or sensor physical correctness.
+- MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only in v0.
+- The YAML config reader intentionally supports a small key-value subset.
+
+## Citation
+
+If DatasetLint helps your work, cite the repository metadata in [CITATION.cff](CITATION.cff).
 
 DatasetLint is MIT licensed.
