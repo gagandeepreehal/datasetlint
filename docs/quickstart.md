@@ -58,10 +58,23 @@ datasetlint diff examples/minimal_dataset examples/bad_dataset
 datasetlint adapters examples/minimal_dataset
 ```
 
-## 7. Use The Python API
+## 7. Inspect Adapter Manifests
+
+```bash
+datasetlint adapters list
+datasetlint adapters detect tests/fixtures/coco_dataset
+datasetlint inspect tests/fixtures/coco_dataset --adapter coco
+datasetlint validate tests/fixtures/kitti_object --adapter kitti
+datasetlint export-manifest tests/fixtures/coco_dataset --adapter coco --output manifest.json
+```
+
+These commands inspect normalized manifests for common external dataset formats. They are separate from `datasetlint lint`, which runs the native folder rule engine.
+
+## 8. Use The Python API
 
 ```python
 from datasetlint import compare_datasets, compute_dataset_stats, lint_dataset
+from datasetlint.adapters import load_dataset, validate_dataset
 
 report = lint_dataset("examples/minimal_dataset")
 print(report.summary())
@@ -71,6 +84,9 @@ print(stats.frame_counts)
 
 diff = compare_datasets("examples/minimal_dataset", "examples/bad_dataset")
 print(diff.summary)
+
+manifest = load_dataset("tests/fixtures/coco_dataset", adapter="coco")
+adapter_report = validate_dataset("tests/fixtures/kitti_object", adapter="kitti")
 ```
 
 ## Minimal Dataset Shape

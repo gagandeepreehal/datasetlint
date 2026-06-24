@@ -32,9 +32,9 @@ DatasetLint catches those issues at the dataset folder boundary so teams can fai
 - researchers sharing small reproducible datasets
 - CI users blocking bad dataset changes before merge
 
-## Current Checks
+## Current Capabilities
 
-DatasetLint v0.1 supports the native folder dataset format. Current checks include:
+DatasetLint v0.1 supports deep rule validation for the native folder dataset format and normalized manifest workflows for common external dataset formats. Current capabilities include:
 
 - required `metadata.json` and `calibration.json`
 - empty CSV files, broken referenced paths, and duplicate filenames

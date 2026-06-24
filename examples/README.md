@@ -82,6 +82,21 @@ datasetlint diff examples/minimal_dataset examples/bad_dataset
 datasetlint adapters examples/minimal_dataset
 ```
 
+## Adapter Fixture Examples
+
+Adapter fixtures live under `tests/fixtures/` so they stay tiny and are shared by docs and tests:
+
+```bash
+datasetlint adapters list
+datasetlint adapters detect tests/fixtures/coco_dataset
+datasetlint inspect tests/fixtures/coco_dataset --adapter coco
+datasetlint inspect tests/fixtures/kitti_object --adapter kitti
+datasetlint validate tests/fixtures/nuscenes_mini_like --adapter nuscenes
+datasetlint export-manifest tests/fixtures/coco_dataset --adapter coco --output /tmp/coco_manifest.json
+```
+
+These fixtures are synthetic placeholders. They exercise adapter layout parsing without bundling real COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, or Hugging Face datasets.
+
 Redirect JSON or Markdown output when you want artifacts:
 
 ```bash

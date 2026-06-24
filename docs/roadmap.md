@@ -9,15 +9,17 @@ This roadmap separates planned work from implemented behavior. Do not treat thes
 - CI examples for common repository layouts.
 - Documentation for rule extension patterns.
 - More report examples and expected-output fixtures.
+- Conversion helpers from normalized adapter manifests into the native folder format.
 
 ## Medium Term
 
-- Deep MCAP adapter support.
-- Deep ROS bag adapter support.
-- NuScenes and Waymo conversion or parsing helpers.
+- Optional deep MCAP channel, schema, compression, and message inspection.
+- Optional deep ROS bag topic and message parsing.
+- Optional deep Waymo TFRecord frame, label, and calibration parsing.
+- Additional dataset adapters such as Argoverse, BDD100K, SemanticKITTI, LeRobot/Open X-Embodiment, and RLDS/TFDS robotics datasets.
 - Richer sensor synchronization checks.
 - Static HTML report output or report UI.
-- Adapter compatibility tests.
+- Entry-point plugin discovery for third-party adapters.
 
 ## Long Term
 
