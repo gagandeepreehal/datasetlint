@@ -7,7 +7,18 @@ from typing import Any
 
 import pandas as pd
 
-from datasetlint.adapters.base import DatasetAdapter, DatasetMetadata, SensorInfo
+from datasetlint.adapters.base import (
+    AnnotationRecord,
+    CalibrationRecord,
+    DatasetAdapter,
+    DatasetManifest,
+    DatasetMetadata,
+    FrameRecord,
+    SensorInfo,
+    SensorStream,
+    SequenceRecord,
+    manifest_provenance,
+)
 from datasetlint.io.csv import read_csv
 from datasetlint.io.filesystem import stemmed_csv_files
 from datasetlint.io.json import read_json
@@ -17,13 +28,14 @@ class FolderAdapter(DatasetAdapter):
     """Load the native folder-based DatasetLint layout."""
 
     name = "folder"
+    supported_formats = ("datasetlint-folder",)
+    description = "Native DatasetLint folder format used by the existing lint checks."
 
     def can_load(self, path: str | Path) -> bool:
         dataset_path = Path(path)
         return dataset_path.is_dir() and (
             (dataset_path / "metadata.json").is_file()
             or (dataset_path / "sensors").is_dir()
-            or (dataset_path / "labels").is_dir()
             or (dataset_path / "trajectories").is_dir()
         )
 
@@ -103,6 +115,100 @@ class FolderAdapter(DatasetAdapter):
             raise ValueError("calibration.json must contain a JSON object.")
         return raw
 
+    def load(self, root: str | Path, **kwargs: Any) -> DatasetManifest:
+        del kwargs
+        dataset_path = Path(root)
+        metadata = self.load_metadata(dataset_path)
+        sensors = [
+            SensorStream(
+                sensor_id=sensor.name,
+                sensor_type=_sensor_type(sensor.name),
+                name=sensor.name,
+                modality=_sensor_type(sensor.name),
+                frequency_hz=sensor.inferred_frequency_hz,
+                frame_count=sensor.frame_count,
+                metadata={"path": sensor.path},
+            )
+            for sensor in self.list_sensors(dataset_path)
+        ]
+        frames: list[FrameRecord] = []
+        for sensor in sensors:
+            sensor_path = sensor.metadata.get("path")
+            if not isinstance(sensor_path, str):
+                continue
+            frame = read_csv(Path(sensor_path))
+            for index, row in frame.iterrows():
+                frame_id = str(row.get("frame_id", row.get("path", f"{sensor.sensor_id}-{index}")))
+                frames.append(
+                    FrameRecord(
+                        frame_id=frame_id,
+                        sequence_id="root",
+                        timestamp=_optional_float(row.get("timestamp")),
+                        sensor_id=sensor.sensor_id,
+                        file_path=str(row.get("path")) if row.get("path") is not None else None,
+                        width=_optional_int(row.get("width")),
+                        height=_optional_int(row.get("height")),
+                        metadata={"row_index": int(index)},
+                    )
+                )
+        annotations: list[AnnotationRecord] = []
+        labels = self.load_labels(dataset_path)
+        if labels is not None:
+            for index, row in labels.iterrows():
+                annotations.append(
+                    AnnotationRecord(
+                        annotation_id=str(row.get("track_id", f"label-{index}")),
+                        frame_id=str(row.get("frame_id"))
+                        if row.get("frame_id") is not None
+                        else None,
+                        sequence_id="root",
+                        category=str(row.get("class")) if row.get("class") is not None else None,
+                        annotation_type="bbox_2d",
+                        values={str(key): value for key, value in row.items()},
+                    )
+                )
+        calibration_records: list[CalibrationRecord] = []
+        calibration = self.load_calibration(dataset_path)
+        if calibration:
+            for sensor_id, value in calibration.items():
+                if isinstance(value, dict):
+                    calibration_records.append(
+                        CalibrationRecord(
+                            sensor_id=str(sensor_id),
+                            intrinsic=value.get("intrinsics")
+                            if isinstance(value.get("intrinsics"), list)
+                            else None,
+                            metadata=value,
+                        )
+                    )
+        return DatasetManifest(
+            dataset_name=metadata.name or dataset_path.name,
+            adapter_name=self.name,
+            dataset_root=str(dataset_path),
+            version=metadata.version,
+            sequences=[
+                SequenceRecord(
+                    sequence_id="root",
+                    name=metadata.name,
+                    frame_count=len(frames) or None,
+                )
+            ],
+            frames=frames,
+            sensors=sensors,
+            annotations=annotations,
+            calibration=calibration_records,
+            splits={},
+            metadata=metadata.raw,
+            limitations=[
+                "Native folder manifest is derived from CSV rows used by existing lint checks."
+            ],
+            provenance=manifest_provenance(
+                dataset_path,
+                source_format="datasetlint-folder",
+                adapter_version=self.adapter_version,
+            ),
+        )
+
 
 def _read_optional_json(path: Path) -> dict[str, Any]:
     if not path.is_file():
@@ -123,3 +229,34 @@ def _numeric_timestamps(frame: pd.DataFrame) -> pd.Series:
     if "timestamp" not in frame.columns:
         return pd.Series(dtype=float)
     return pd.to_numeric(frame["timestamp"], errors="coerce").dropna()
+
+
+def _sensor_type(sensor_name: str) -> str:
+    lowered = sensor_name.lower()
+    if "camera" in lowered:
+        return "camera"
+    if "lidar" in lowered or "velodyne" in lowered:
+        return "lidar"
+    if "imu" in lowered:
+        return "imu"
+    if "gps" in lowered:
+        return "gps"
+    return "unknown"
+
+
+def _optional_float(value: object) -> float | None:
+    if not isinstance(value, str | bytes | bytearray | int | float):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _optional_int(value: object) -> int | None:
+    if not isinstance(value, str | bytes | bytearray | int | float):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None

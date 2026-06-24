@@ -1,0 +1,10 @@
+[
+  {
+    "token": "ann-token",
+    "sample_token": "sample-token",
+    "category_name": "vehicle.car",
+    "translation": [0, 0, 0],
+    "size": [1, 1, 1],
+    "rotation": [1, 0, 0, 0]
+  }
+]

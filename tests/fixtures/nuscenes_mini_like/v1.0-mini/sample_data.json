@@ -1,0 +1,22 @@
+[
+  {
+    "token": "sample-data-camera",
+    "sample_token": "sample-token",
+    "calibrated_sensor_token": "calib-camera",
+    "ego_pose_token": "ego-pose",
+    "filename": "v1.0-mini/samples/CAM_FRONT/000001.jpg",
+    "timestamp": 1000000,
+    "channel": "CAM_FRONT",
+    "width": 640,
+    "height": 480
+  },
+  {
+    "token": "sample-data-lidar",
+    "sample_token": "sample-token",
+    "calibrated_sensor_token": "calib-lidar",
+    "ego_pose_token": "ego-pose",
+    "filename": "v1.0-mini/samples/LIDAR_TOP/000001.bin",
+    "timestamp": 1000000,
+    "channel": "LIDAR_TOP"
+  }
+]

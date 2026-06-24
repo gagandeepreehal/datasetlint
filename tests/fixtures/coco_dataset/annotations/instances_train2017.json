@@ -1,0 +1,25 @@
+{
+  "images": [
+    {
+      "id": 1,
+      "file_name": "000000000001.jpg",
+      "width": 640,
+      "height": 480
+    }
+  ],
+  "annotations": [
+    {
+      "id": 10,
+      "image_id": 1,
+      "category_id": 2,
+      "bbox": [10, 20, 30, 40],
+      "segmentation": []
+    }
+  ],
+  "categories": [
+    {
+      "id": 2,
+      "name": "car"
+    }
+  ]
+}

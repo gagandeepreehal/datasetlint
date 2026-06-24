@@ -84,11 +84,32 @@ print(diff.to_json())
 ## Adapters
 
 ```python
-from datasetlint.adapters import detect_adapters, get_adapter
+from datasetlint.adapters import (
+    detect_adapter,
+    detect_adapters,
+    get_adapter,
+    list_adapters,
+    load_dataset,
+    validate_dataset,
+)
 
 detections = detect_adapters("examples/minimal_dataset")
 adapter = get_adapter("examples/minimal_dataset", "auto")
 metadata = adapter.load_metadata("examples/minimal_dataset")
+
+coco_manifest = load_dataset("tests/fixtures/coco_dataset", adapter="coco")
+kitti_report = validate_dataset("tests/fixtures/kitti_object", adapter="kitti")
+auto_adapter = detect_adapter("tests/fixtures/nuscenes_mini_like")
+all_adapters = list_adapters()
 ```
 
-Only the folder adapter deeply loads data in v0.1. MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only.
+The native `folder` adapter feeds the existing lint rule engine. Other adapters
+produce normalized `DatasetManifest` objects and `AdapterValidationReport`
+objects for inspection, validation, and export.
+
+Manifest objects expose `to_dict()` and `to_json()` helpers:
+
+```python
+payload = coco_manifest.to_dict()
+json_text = coco_manifest.to_json()
+```

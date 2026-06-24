@@ -12,7 +12,15 @@ from rich.console import Console
 from rich.table import Table
 
 from datasetlint._version import __version__
-from datasetlint.adapters import detect_adapters
+from datasetlint.adapters import (
+    AdapterError,
+    DatasetManifest,
+    detect_adapter,
+    detect_adapters,
+    list_adapter_info,
+    load_dataset,
+    validate_dataset,
+)
 from datasetlint.core import lint_dataset, validate_checks
 from datasetlint.diff import DatasetDiffReport, compare_datasets
 from datasetlint.formatters.console import print_report
@@ -47,7 +55,8 @@ def main(
         typer.Argument(
             help=(
                 "Dataset path, or one of: lint DATASET, report DATASET, stats DATASET, "
-                "diff OLD NEW, adapters DATASET."
+                "diff OLD NEW, adapters list|detect DATASET, inspect DATASET, validate DATASET, "
+                "export-manifest DATASET."
             )
         ),
     ],
@@ -63,8 +72,30 @@ def main(
     ] = None,
     adapter: Annotated[
         str,
-        typer.Option("--adapter", help="Dataset adapter name: folder or auto."),
+        typer.Option(
+            "--adapter", help="Dataset adapter name, such as folder, generic, coco, or auto."
+        ),
     ] = "folder",
+    auto_detect: Annotated[
+        bool,
+        typer.Option("--auto-detect", help="Auto-detect adapter for adapter manifest commands."),
+    ] = False,
+    split: Annotated[
+        str | None,
+        typer.Option("--split", help="Optional split for adapters such as Hugging Face."),
+    ] = None,
+    streaming: Annotated[
+        bool,
+        typer.Option("--streaming", help="Use streaming mode when supported by the adapter."),
+    ] = False,
+    max_rows: Annotated[
+        int | None,
+        typer.Option("--max-rows", help="Maximum rows to inspect for sampling adapters."),
+    ] = 1000,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", help="Write adapter manifest JSON to this path."),
+    ] = None,
     out: Annotated[
         Path | None,
         typer.Option("--out", help="Write a JSON report to this path for report command."),
@@ -87,7 +118,8 @@ def main(
     if not args:
         _usage_error(
             "Provide a dataset path, lint DATASET, report DATASET, stats DATASET, "
-            "diff OLD NEW, or adapters DATASET."
+            "diff OLD NEW, adapters list|detect DATASET, inspect DATASET, validate DATASET, "
+            "or export-manifest DATASET."
         )
 
     command = args[0]
@@ -105,6 +137,15 @@ def main(
         return
     if command == "adapters":
         _run_adapters(args[1:], format)
+        return
+    if command == "inspect":
+        _run_inspect(args[1:], adapter, auto_detect, split, streaming, max_rows, format)
+        return
+    if command == "validate":
+        _run_adapter_validate(args[1:], adapter, auto_detect, split, streaming, max_rows, format)
+        return
+    if command == "export-manifest":
+        _run_export_manifest(args[1:], adapter, auto_detect, split, streaming, max_rows, output)
         return
 
     if len(args) != 1:
@@ -208,11 +249,83 @@ def _run_diff(
 
 
 def _run_adapters(args: list[str], format: OutputFormat) -> None:
+    if len(args) == 1 and args[0] == "list":
+        _print_adapter_list(format)
+        return
+    if len(args) == 2 and args[0] == "detect":
+        _print_adapter_detection(args[1], format)
+        return
     if len(args) != 1:
-        _usage_error("adapters expects one dataset path.")
-    detections = detect_adapters(Path(args[0]))
+        _usage_error("adapters expects list, detect DATASET, or one dataset path.")
+    _print_adapter_detection(args[0], format)
+
+
+def _print_adapter_list(format: OutputFormat) -> None:
+    adapters = list_adapter_info()
     if format is OutputFormat.json:
-        typer.echo(json.dumps([detection.model_dump() for detection in detections], indent=2))
+        typer.echo(json.dumps([adapter.to_dict() for adapter in adapters], indent=2))
+        return
+    if format is OutputFormat.markdown:
+        lines = [
+            "# DatasetLint Adapters",
+            "",
+            "| Adapter | Formats | Availability | Optional dependencies | Description |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+        for adapter in adapters:
+            deps = ", ".join(
+                f"{name}={'yes' if available else 'no'}"
+                for name, available in adapter.optional_dependencies.items()
+            )
+            lines.append(
+                f"| {adapter.name} | {', '.join(adapter.supported_formats)} | "
+                f"{adapter.availability} | {deps or 'none'} | {adapter.description} |"
+            )
+        typer.echo("\n".join(lines) + "\n")
+        return
+    console = Console()
+    table = Table(title="DatasetLint Adapters")
+    table.add_column("Adapter")
+    table.add_column("Formats")
+    table.add_column("Availability")
+    table.add_column("Optional deps")
+    table.add_column("Description")
+    for adapter in adapters:
+        deps = ", ".join(
+            f"{name}:{'yes' if available else 'no'}"
+            for name, available in adapter.optional_dependencies.items()
+        )
+        table.add_row(
+            adapter.name,
+            ", ".join(adapter.supported_formats),
+            adapter.availability,
+            deps or "none",
+            adapter.description,
+        )
+    console.print(table)
+
+
+def _print_adapter_detection(dataset: str, format: OutputFormat) -> None:
+    detections = detect_adapters(Path(dataset) if not dataset.startswith("hf://") else dataset)
+    selected_name: str | None = None
+    ambiguity: str | None = None
+    try:
+        selected_name = detect_adapter(
+            Path(dataset) if not dataset.startswith("hf://") else dataset
+        ).name
+    except AdapterError as exc:
+        ambiguity = str(exc)
+    if format is OutputFormat.json:
+        typer.echo(
+            json.dumps(
+                {
+                    "detections": [detection.to_dict() for detection in detections],
+                    "selected": selected_name,
+                    "warning": ambiguity,
+                },
+                indent=2,
+            )
+        )
     elif format is OutputFormat.markdown:
         lines = [
             "# DatasetLint Adapters",
@@ -222,6 +335,10 @@ def _run_adapters(args: list[str], format: OutputFormat) -> None:
         ]
         for detection in detections:
             lines.append(f"| {detection.name} | `{detection.can_load}` | {detection.message} |")
+        if selected_name:
+            lines.extend(["", f"Selected adapter: `{selected_name}`"])
+        if ambiguity:
+            lines.extend(["", f"Warning: {ambiguity}"])
         typer.echo("\n".join(lines) + "\n")
     else:
         console = Console()
@@ -232,6 +349,160 @@ def _run_adapters(args: list[str], format: OutputFormat) -> None:
         for detection in detections:
             table.add_row(detection.name, str(detection.can_load), detection.message)
         console.print(table)
+        if selected_name:
+            console.print(f"Selected adapter: {selected_name}")
+        if ambiguity:
+            console.print(f"Warning: {ambiguity}")
+
+
+def _run_inspect(
+    args: list[str],
+    adapter: str,
+    auto_detect: bool,
+    split: str | None,
+    streaming: bool,
+    max_rows: int | None,
+    format: OutputFormat,
+) -> None:
+    if len(args) != 1:
+        _usage_error("inspect expects one dataset path.")
+    adapter_name = None if auto_detect or adapter == "auto" else adapter
+    try:
+        manifest = load_dataset(
+            _adapter_root(args[0]),
+            adapter=adapter_name,
+            split=split,
+            streaming=streaming,
+            max_rows=max_rows,
+        )
+    except AdapterError as exc:
+        _usage_error(str(exc))
+    if format is OutputFormat.json:
+        typer.echo(manifest.to_json())
+        return
+    if format is OutputFormat.markdown:
+        typer.echo(_manifest_markdown(manifest))
+        return
+    console = Console()
+    console.print(
+        f"Dataset: {manifest.dataset_name} adapter={manifest.adapter_name} "
+        f"sequences={len(manifest.sequences)} frames={len(manifest.frames)} "
+        f"sensors={len(manifest.sensors)} annotations={len(manifest.annotations)}"
+    )
+    console.print(f"splits={manifest.splits}")
+    if manifest.limitations:
+        console.print("limitations=" + "; ".join(manifest.limitations))
+    if manifest.provenance.warnings:
+        console.print("warnings=" + "; ".join(manifest.provenance.warnings))
+
+
+def _run_adapter_validate(
+    args: list[str],
+    adapter: str,
+    auto_detect: bool,
+    split: str | None,
+    streaming: bool,
+    max_rows: int | None,
+    format: OutputFormat,
+) -> None:
+    if len(args) != 1:
+        _usage_error("validate expects one dataset path.")
+    adapter_name = None if auto_detect or adapter == "auto" else adapter
+    try:
+        report = validate_dataset(
+            _adapter_root(args[0]),
+            adapter=adapter_name,
+            split=split,
+            streaming=streaming,
+            max_rows=max_rows,
+        )
+    except AdapterError as exc:
+        _usage_error(str(exc))
+    if format is OutputFormat.json:
+        typer.echo(report.to_json())
+        return
+    if format is OutputFormat.markdown:
+        lines = [
+            "# DatasetLint Adapter Validation",
+            "",
+            f"- adapter: `{report.adapter_name}`",
+            f"- valid: `{report.valid}`",
+            f"- detected: `{report.detected}`",
+            f"- stats: `{report.stats}`",
+            f"- coverage: `{report.coverage}`",
+        ]
+        if report.errors:
+            lines.append(f"- errors: {', '.join(report.errors)}")
+        if report.warnings:
+            lines.append(f"- warnings: {', '.join(report.warnings)}")
+        typer.echo("\n".join(lines) + "\n")
+        return
+    console = Console()
+    console.print(
+        f"Adapter validation: adapter={report.adapter_name} valid={report.valid} "
+        f"errors={len(report.errors)} warnings={len(report.warnings)}"
+    )
+    for error in report.errors:
+        console.print(f"Error: {error}")
+    for warning in report.warnings:
+        console.print(f"Warning: {warning}")
+    console.print(f"coverage={report.coverage}")
+    console.print(f"stats={report.stats}")
+    if not report.valid:
+        raise typer.Exit(1)
+
+
+def _run_export_manifest(
+    args: list[str],
+    adapter: str,
+    auto_detect: bool,
+    split: str | None,
+    streaming: bool,
+    max_rows: int | None,
+    output: Path | None,
+) -> None:
+    if len(args) != 1:
+        _usage_error("export-manifest expects one dataset path.")
+    if output is None:
+        _usage_error("export-manifest requires --output manifest.json.")
+    adapter_name = None if auto_detect or adapter == "auto" else adapter
+    try:
+        manifest = load_dataset(
+            _adapter_root(args[0]),
+            adapter=adapter_name,
+            split=split,
+            streaming=streaming,
+            max_rows=max_rows,
+        )
+    except AdapterError as exc:
+        _usage_error(str(exc))
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(manifest.to_json() + "\n", encoding="utf-8")
+    except OSError as exc:
+        _usage_error(f"Could not write manifest to {output}: {exc}.")
+    typer.echo(f"Wrote JSON manifest to {output}")
+
+
+def _adapter_root(value: str) -> str | Path:
+    if value.startswith("hf://"):
+        return value
+    return Path(value)
+
+
+def _manifest_markdown(manifest: DatasetManifest) -> str:
+    manifest_dict = manifest.to_dict()
+    return (
+        "# DatasetLint Manifest\n\n"
+        f"- dataset: `{manifest_dict['dataset_name']}`\n"
+        f"- adapter: `{manifest_dict['adapter_name']}`\n"
+        f"- sequences: `{len(manifest_dict['sequences'])}`\n"
+        f"- frames: `{len(manifest_dict['frames'])}`\n"
+        f"- sensors: `{len(manifest_dict['sensors'])}`\n"
+        f"- annotations: `{len(manifest_dict['annotations'])}`\n"
+        f"- splits: `{manifest_dict['splits']}`\n"
+        f"- limitations: `{manifest_dict['limitations']}`\n"
+    )
 
 
 def _print_stats(stats: DatasetStats) -> None:

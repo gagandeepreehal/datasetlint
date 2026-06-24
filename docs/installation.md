@@ -28,6 +28,24 @@ For a minimal editable install without dev or docs tools:
 python -m pip install -e .
 ```
 
+## Adapter Extras
+
+Heavy dataset runtimes are optional. Install only the extras you need:
+
+```bash
+python -m pip install -e ".[adapters]"
+python -m pip install -e ".[hf]"
+python -m pip install -e ".[mcap]"
+python -m pip install -e ".[ros]"
+python -m pip install -e ".[nuscenes]"
+python -m pip install -e ".[waymo]"
+python -m pip install -e ".[all-adapters]"
+```
+
+The base install can still inspect COCO, KITTI, generic folders, nuScenes
+metadata tables, and index-only Waymo, ROS bag, and MCAP datasets without those
+heavy optional packages.
+
 ## Package Install Status
 
 This repository has package metadata and a publish workflow, but the current checkout has no Git tags. Until the first PyPI release is published, use the source install rather than documenting `pip install datasetlint` as the default path.

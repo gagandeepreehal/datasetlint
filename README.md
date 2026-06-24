@@ -47,9 +47,8 @@ DatasetLint v0.1 supports the native folder dataset format. Current checks inclu
 - label columns, confidence, geometry, timestamp range, class switches, duplicate tracks, short tracks, missing labels, box jumps, and size changes
 - trajectory columns, finite values, speed, acceleration, yaw range, and stationary motion
 - dataset statistics and folder-to-folder diffs
-- adapter detection for folder, MCAP, ROS bag, NuScenes, and Waymo inputs
-
-MCAP, ROS bag, NuScenes, and Waymo are detection-only in v0.1; deep parsing is planned but not implemented.
+- normalized adapter manifests for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets
+- adapter validation, inspection, discovery, and manifest export commands
 
 ## Installation
 
@@ -67,6 +66,18 @@ python -m pip install -e ".[dev,docs]"
 Use `python3.10`, `python3.11`, or `python3.12` if that is the executable name on your machine. The macOS system `python3` may be Python 3.9, which is too old for this project.
 
 This repository has publishing metadata and a publish workflow, but this checkout has no release tags. Until the first PyPI release is published, use the source install above instead of `pip install datasetlint`.
+
+Adapter extras are opt-in so the base install stays lightweight:
+
+```bash
+python -m pip install -e ".[adapters]"
+python -m pip install -e ".[hf]"
+python -m pip install -e ".[mcap]"
+python -m pip install -e ".[ros]"
+python -m pip install -e ".[nuscenes]"
+python -m pip install -e ".[waymo]"
+python -m pip install -e ".[all-adapters]"
+```
 
 ## Quickstart
 
@@ -156,7 +167,19 @@ Inspect adapter detection:
 
 ```bash
 datasetlint adapters DATASET_PATH
+datasetlint adapters list
+datasetlint adapters detect DATASET_PATH
 datasetlint adapters DATASET_PATH --format json
+```
+
+Inspect, validate, or export normalized manifests for common formats:
+
+```bash
+datasetlint inspect DATASET_PATH --adapter coco
+datasetlint inspect DATASET_PATH --auto-detect
+datasetlint validate DATASET_PATH --adapter kitti
+datasetlint validate hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
+datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.json
 ```
 
 Exit codes:
@@ -169,7 +192,7 @@ Exit codes:
 
 ```python
 from datasetlint import compare_datasets, compute_dataset_stats, lint_dataset
-from datasetlint.adapters import detect_adapters, get_adapter
+from datasetlint.adapters import detect_adapters, get_adapter, load_dataset, validate_dataset
 
 report = lint_dataset("examples/minimal_dataset")
 print(report.summary())
@@ -187,6 +210,9 @@ print(diff.summary)
 
 detections = detect_adapters("examples/minimal_dataset")
 adapter = get_adapter("examples/minimal_dataset", "auto")
+
+manifest = load_dataset("tests/fixtures/coco_dataset", adapter="coco")
+validation = validate_dataset("tests/fixtures/kitti_object", adapter="kitti")
 ```
 
 Public imports from `datasetlint` are `lint_dataset`, `compare_datasets`, `compute_dataset_stats`, `Issue`, `LintConfig`, `LintReport`, `DatasetStats`, and `DatasetDiffReport`.
@@ -284,15 +310,18 @@ Use `--fail-on warning` for stricter validation, or `datasetlint diff OLD_DATASE
 
 ## Supported Formats And Adapters
 
-| Format or adapter | Status | Notes |
-| --- | --- | --- |
-| Native folder format | supported | JSON metadata and calibration plus CSV sensors, labels, and trajectories |
-| CSV / JSON metadata | supported | Supported inside the native folder format |
-| Custom adapters | experimental | Implement `DatasetAdapter`; only the registry and interface are stable enough for local extension |
-| MCAP | detection-only | Detects `.mcap` files; deep parsing raises `NotImplementedError` |
-| ROS bag | detection-only | Detects `.bag` files; deep parsing raises `NotImplementedError` |
-| NuScenes | detection-only | Detects likely NuScenes metadata folders; deep parsing raises `NotImplementedError` |
-| Waymo | detection-only | Detects `.tfrecord` files; deep parsing raises `NotImplementedError` |
+| Dataset / Format | Adapter | Status | Optional Dependency | Notes |
+| --- | --- | --- | --- | --- |
+| Native DatasetLint folders | `folder` | supported | none | CSV/JSON format used by existing lint checks |
+| Generic folders | `generic` | supported | none/`pyyaml` | Recursive inferred schema for images, point clouds, videos, labels, and timestamps |
+| COCO | `coco` | supported | none | Direct JSON parser for images, categories, bbox, and segmentation references |
+| KITTI | `kitti` | supported | none | Object and odometry layouts with camera, lidar, labels, calibration, and timestamps |
+| nuScenes | `nuscenes` | supported | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit |
+| Waymo | `waymo` | index-supported | optional Waymo package | TFRecord indexing by default; full parse remains optional |
+| ROS bag | `rosbag` | index-supported | optional `rosbags` | ROS1/ROS2 file indexing and lightweight ROS2 metadata topic summaries |
+| MCAP | `mcap` | index-supported | optional `mcap` | File indexing by default; channel/schema parsing is optional |
+| Hugging Face | `huggingface` | supported | `datasets` | Cache metadata indexing plus guarded remote sampling |
+| Custom adapters | subclass `DatasetAdapter` | experimental | adapter-specific | Implement `detect`, `load`, and `validate`, then register the adapter |
 
 ## Limitations
 
@@ -300,7 +329,9 @@ Use `--fail-on warning` for stricter validation, or `datasetlint diff OLD_DATASE
 - DatasetLint is not a model evaluation framework.
 - DatasetLint is not a simulator or replay tool.
 - Current validation is local-first and file-based.
-- Only the native folder adapter deeply loads data in v0.1.
+- Existing rule checks still validate the native folder CSV/JSON format; non-folder adapters produce normalized manifests and adapter validation reports.
+- Waymo, ROS bag, and MCAP default to safe index-only manifests unless optional parsers are available.
+- Hugging Face remote datasets require the `datasets` extra and explicit sampling controls.
 - Large-dataset performance has not been benchmarked yet.
 - The config reader supports a small YAML subset, not full YAML syntax.
 - Report output is file/terminal oriented; there is no report UI yet.
@@ -316,8 +347,8 @@ Near term:
 
 Medium term:
 
-- deep MCAP and ROS bag adapters
-- NuScenes and Waymo conversion or parsing helpers
+- deeper MCAP, ROS bag, and Waymo optional parser integrations
+- conversion helpers from normalized manifests to the native lintable folder format
 - richer sensor synchronization checks
 - report UI or static HTML output
 

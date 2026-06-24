@@ -1,0 +1,14 @@
+{
+  "features": {
+    "image": {
+      "_type": "Image"
+    },
+    "label": {
+      "_type": "ClassLabel",
+      "names": ["free", "occupied"]
+    },
+    "caption": {
+      "dtype": "string"
+    }
+  }
+}
