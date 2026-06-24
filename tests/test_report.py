@@ -35,3 +35,21 @@ def test_report_json_matches_committed_schema_required_fields(tmp_path):
     assert payload["findings"] == payload["issues"]
     assert payload["dataset_summary"]["available_modalities"]
     assert payload["dataset_fingerprint"].startswith("sha256:")
+
+
+def test_dataset_fingerprint_does_not_read_referenced_payloads(tmp_path, monkeypatch):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    original_open = Path.open
+
+    def guarded_open(self: Path, *args, **kwargs):
+        if self.suffix == ".jpg":
+            raise AssertionError("fingerprint should not read image payloads")
+        return original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", guarded_open)
+
+    report = lint_dataset(dataset)
+
+    assert report.passed is True
+    assert report.dataset_fingerprint is not None
+    assert report.dataset_fingerprint.startswith("sha256:")

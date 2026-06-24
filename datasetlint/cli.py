@@ -95,7 +95,7 @@ def main(
         _run_lint(args[1:], config, checks, adapter, format, fail_on)
         return
     if command == "report":
-        _run_report(args[1:], config, checks, adapter, out)
+        _run_report(args[1:], config, checks, adapter, out, fail_on)
         return
     if command == "stats":
         _run_stats(args[1:], config, format)
@@ -146,6 +146,7 @@ def _run_report(
     checks: str | None,
     adapter: str,
     out: Path | None,
+    fail_on: FailLevel,
 ) -> None:
     if len(args) != 1:
         _usage_error("report expects one dataset path.")
@@ -165,7 +166,7 @@ def _run_report(
     except OSError as exc:
         _usage_error(f"Could not write report to {out}: {exc}.")
     typer.echo(f"Wrote JSON report to {out}")
-    if not report.passed:
+    if should_fail(report, fail_on.value):
         raise typer.Exit(1)
 
 

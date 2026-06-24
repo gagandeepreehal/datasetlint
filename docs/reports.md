@@ -31,7 +31,7 @@ Python validation returns `LintReport`:
 - `dataset_path`
 - `generated_at`
 - `datasetlint_version`
-- `dataset_fingerprint`
+- `dataset_fingerprint` from a lightweight file-manifest hash
 - `dataset_summary`
 - `checks_run`
 - `adapter`

@@ -354,10 +354,9 @@ def _dataset_fingerprint(dataset_path: Path) -> str | None:
         except OSError:
             continue
         digest.update(relative.encode("utf-8"))
+        digest.update(b"\0")
         digest.update(str(stat.st_size).encode("ascii"))
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(65536), b""):
-                digest.update(chunk)
+        digest.update(b"\0")
     return f"sha256:{digest.hexdigest()}"
 
 

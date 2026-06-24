@@ -102,6 +102,26 @@ def test_cli_report_writes_json(tmp_path):
     assert payload["adapter"]["name"] == "folder"
 
 
+def test_cli_report_honors_fail_on_warning(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    output = tmp_path / "report.json"
+    metadata = json.loads((dataset / "metadata.json").read_text(encoding="utf-8"))
+    metadata.pop("version")
+    (dataset / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+    runner = CliRunner()
+
+    result = runner.invoke(
+        app,
+        ["report", str(dataset), "--out", str(output), "--fail-on", "warning"],
+    )
+
+    assert result.exit_code == 1
+    assert output.is_file()
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["passed"] is True
+    assert payload["stats"]["issue_count_by_severity"]["warning"] == 1
+
+
 def test_python_module_help_entrypoint():
     result = subprocess.run(
         [sys.executable, "-m", "datasetlint", "--help"],
