@@ -54,6 +54,37 @@ Rows are 1-based CSV rows. The header is row 1 and the first data row is row 2.
 
 The committed JSON schema is `schemas/report.schema.json`.
 
+## Adapter Manifest And Validation Fields
+
+Adapter inspection returns `DatasetManifest`:
+
+- `dataset_name`
+- `adapter_name`
+- `dataset_root`
+- `version`
+- `sequences`
+- `frames`
+- `sensors`
+- `annotations`
+- `calibration`
+- `splits`
+- `metadata`
+- `limitations`
+- `provenance`
+
+Adapter validation returns `AdapterValidationReport`:
+
+- `adapter_name`
+- `dataset_root`
+- `detected`
+- `valid`
+- `errors`
+- `warnings`
+- `coverage`
+- `stats`
+
+Use `datasetlint export-manifest DATASET --adapter NAME --output manifest.json` when you need a JSON artifact for adapter output.
+
 ## Severity Levels
 
 | Severity | Meaning |
@@ -69,7 +100,7 @@ Validation `passed` is true when there are no `error` issues.
 | Code | Meaning |
 | ---: | --- |
 | `0` | Command completed and did not meet the configured failure threshold |
-| `1` | Validation failed the `--fail-on` threshold, or diff regressions were found with `--fail-on-regression` |
+| `1` | Validation failed the `--fail-on` threshold, adapter validation failed, or diff regressions were found with `--fail-on-regression` |
 | `2` | Invalid usage, unknown check group, bad adapter, or invalid config |
 
 ## CI Behavior

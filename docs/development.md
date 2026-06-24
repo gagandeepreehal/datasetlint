@@ -4,7 +4,7 @@
 
 ```text
 datasetlint/
-  adapters/      adapter interfaces and implementations
+  adapters/      adapter interfaces, registry, normalized models, and implementations
   checks/        validation rules
   formatters/    console report formatting
   io/            CSV, JSON, and filesystem helpers
@@ -36,7 +36,7 @@ Tests should cover:
 - CLI success, failure, and usage errors
 - public API imports and report serialization
 - config parsing and unknown-key failures
-- adapter detection and detection-only messages
+- adapter registration, detection, manifests, validation, and optional-dependency paths
 - stats and diff summaries
 - tiny example datasets where useful
 
@@ -46,7 +46,17 @@ Add rule functions under `datasetlint/checks/`, register them in `datasetlint/co
 
 ## Adding Adapters
 
-Add adapter classes under `datasetlint/adapters/`, register them in `datasetlint/adapters/__init__.py`, and update [Adapters](adapters.md). Do not document deep support until the adapter can load the data needed by validation.
+Add adapter classes under `datasetlint/adapters/`, register them in `datasetlint/adapters/registry.py`, export public classes or helpers from `datasetlint/adapters/__init__.py`, and update [Adapters](adapters.md).
+
+An adapter should implement:
+
+- `name`
+- `supported_formats`
+- `detect(root)` or `can_load(path)`
+- `load(root, **kwargs)`
+- `validate(root, **kwargs)`
+
+Use `DatasetManifest` and `AdapterValidationReport` from `datasetlint.adapters.base`. Keep optional dependencies out of the base install, and use tiny synthetic fixtures for tests.
 
 ## Adding Config
 

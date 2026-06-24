@@ -59,13 +59,14 @@ Rules should be deterministic and should not require network access, GPU runtime
 ## Adding An Adapter
 
 1. Implement `DatasetAdapter` from `datasetlint/adapters/base.py`.
-2. Make `can_load()` cheap and conservative.
-3. Return clear `NotImplementedError` messages for detection-only adapters.
-4. Register the adapter in `datasetlint/adapters/__init__.py`.
-5. Add tests for detection, error messages, and any implemented loading behavior.
-6. Update `docs/adapters.md` and the supported format table in README.
+2. Make `detect()` or `can_load()` cheap and conservative.
+3. Return `DatasetManifest` from `load()` and `AdapterValidationReport` from `validate()`.
+4. Keep optional dependencies out of the base install and report limitations explicitly when they are unavailable.
+5. Register the adapter in `datasetlint/adapters/registry.py` and export public helpers or classes from `datasetlint/adapters/__init__.py`.
+6. Add tiny fixtures and tests for detection, explicit adapter override, manifest serialization, validation failures, CLI commands, and optional dependency paths.
+7. Update `docs/adapters.md`, relevant CLI/API docs, and the supported format table in README.
 
-Only mark an adapter as supported when it deeply loads the data used by validation. Detection alone should be documented as detection-only.
+Only mark an adapter as supported for the behavior that is implemented. If the adapter is index-only without optional dependencies, document the exact limitation and keep unsupported fields explicit in `limitations`, `metadata`, or `provenance.warnings`.
 
 ## Adding A Fixture Dataset
 

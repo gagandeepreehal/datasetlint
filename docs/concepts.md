@@ -2,7 +2,7 @@
 
 ## Dataset
 
-A dataset is a local folder containing metadata, calibration, sensor CSVs, labels, trajectories, and referenced files such as images.
+A dataset is a local folder, file, or supported dataset reference that DatasetLint can inspect. The native lint rules operate on a folder containing metadata, calibration, sensor CSVs, labels, trajectories, and referenced files such as images.
 
 ## Sample
 
@@ -30,7 +30,13 @@ Issue severities are `error`, `warning`, and `info`. Validation passes when ther
 
 ## Adapter
 
-An adapter detects or loads a dataset format. The folder adapter is supported. MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only in v0.1.
+An adapter detects, loads, and validates a dataset format. The native `folder` adapter feeds the existing rule engine. Other adapters produce a normalized `DatasetManifest` and `AdapterValidationReport` for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets.
+
+Some adapters intentionally run in lightweight mode. Waymo, ROS bag, and MCAP index files by default and record limitations when optional parser dependencies are unavailable.
+
+## Manifest
+
+A manifest is the normalized adapter output. It includes sequences, frames, sensor streams, annotations, calibration records, splits, metadata, limitations, and provenance.
 
 ## Report
 
