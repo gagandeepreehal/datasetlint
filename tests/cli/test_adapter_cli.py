@@ -58,6 +58,49 @@ def test_cli_validate_works():
     assert payload["valid"] is True
 
 
+def test_cli_validate_json_exits_nonzero_when_invalid(tmp_path):
+    annotations = tmp_path / "annotations"
+    annotations.mkdir()
+    (annotations / "instances_train2017.json").write_text(
+        '{"images": [{"id": 1, "file_name": "missing.jpg"}], '
+        '"annotations": [{"id": 2, "image_id": 1, "category_id": 3, '
+        '"bbox": [0, 0, 1, 1]}], '
+        '"categories": [{"id": 3, "name": "car"}]}',
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["validate", str(tmp_path), "--adapter", "coco", "--format", "json"],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["valid"] is False
+    assert any("Missing image file" in error for error in payload["errors"])
+
+
+def test_cli_validate_markdown_exits_nonzero_when_invalid(tmp_path):
+    annotations = tmp_path / "annotations"
+    annotations.mkdir()
+    (annotations / "instances_train2017.json").write_text(
+        '{"images": [{"id": 1, "file_name": "missing.jpg"}], '
+        '"annotations": [{"id": 2, "image_id": 1, "category_id": 3, '
+        '"bbox": [0, 0, 1, 1]}], '
+        '"categories": [{"id": 3, "name": "car"}]}',
+        encoding="utf-8",
+    )
+
+    result = CliRunner().invoke(
+        app,
+        ["validate", str(tmp_path), "--adapter", "coco", "--format", "markdown"],
+    )
+
+    assert result.exit_code == 1
+    assert "- valid: `False`" in result.stdout
+    assert "Missing image file" in result.stdout
+
+
 def test_cli_export_manifest_writes_json(tmp_path):
     output = tmp_path / "manifest.json"
 

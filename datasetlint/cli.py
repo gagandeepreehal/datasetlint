@@ -420,6 +420,8 @@ def _run_adapter_validate(
         _usage_error(str(exc))
     if format is OutputFormat.json:
         typer.echo(report.to_json())
+        if not report.valid:
+            raise typer.Exit(1)
         return
     if format is OutputFormat.markdown:
         lines = [
@@ -436,6 +438,8 @@ def _run_adapter_validate(
         if report.warnings:
             lines.append(f"- warnings: {', '.join(report.warnings)}")
         typer.echo("\n".join(lines) + "\n")
+        if not report.valid:
+            raise typer.Exit(1)
         return
     console = Console()
     console.print(
