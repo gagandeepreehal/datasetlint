@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Checks - DatasetLint</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Checks";
+        var mkdocs_page_input_path = "checks.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> DatasetLint
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Checks</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#file-checks">File Checks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#timestamp-checks">Timestamp Checks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#synchronization-checks">Synchronization Checks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#sensor-checks">Sensor Checks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#calibration-checks">Calibration Checks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#label-checks">Label Checks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#trajectory-checks">Trajectory Checks</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#check-groups">Check Groups</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#related-configuration">Related Configuration</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../reports/">Reports</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../stats/">Stats</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../diff/">Diff</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../adapters/">Adapters</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../ci/">CI Templates</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../release-checklist/">Release Checklist</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">DatasetLint</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Checks</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/gagandeepreehal/datasetlint/edit/master/docs/checks.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="checks">Checks</h1>
+<p>DatasetLint v0.1 supports simple folder-based datasets with <code>metadata.json</code>, <code>calibration.json</code>, <code>sensors/</code>, <code>labels/</code>, and <code>trajectories/</code>.</p>
+<p>Commands using <code>examples/...</code> assume a source checkout. For wheel-only installs,
+replace them with paths to local datasets.</p>
+<h2 id="file-checks">File Checks</h2>
+<ul>
+<li>Required <code>metadata.json</code> and <code>calibration.json</code></li>
+<li>Empty CSV files</li>
+<li>Missing sensor CSVs declared by metadata</li>
+<li>Broken paths referenced by CSV rows</li>
+<li>Duplicate filenames across the dataset tree</li>
+</ul>
+<p>Issue row numbers follow spreadsheet convention: the header is row 1 and the first data row is
+row 2.</p>
+<h2 id="timestamp-checks">Timestamp Checks</h2>
+<ul>
+<li>Non-monotonic timestamps</li>
+<li>Duplicate timestamps</li>
+<li>Large timestamp gaps</li>
+</ul>
+<h2 id="synchronization-checks">Synchronization Checks</h2>
+<p>Run only synchronization diagnostics with:</p>
+<pre><code class="language-bash">datasetlint examples/minimal_dataset --checks sync
+</code></pre>
+<ul>
+<li>Sensor time ranges with no overlap or low overlap ratio</li>
+<li>Sensor stream start offsets</li>
+<li>Pairwise median timestamp gaps between sensor streams</li>
+<li>Missing frame bursts based on large timestamp gaps</li>
+<li>Unstable sensor frame intervals</li>
+<li>Per-sensor timing diagnostics in report stats</li>
+</ul>
+<p><code>max_timestamp_gap_sec</code> controls missing frame burst diagnostics. The separate
+<code>timestamp_gap_threshold_sec</code> setting controls the general timestamp gap check across every
+loaded CSV; tune both when you want matching thresholds for those related reports.</p>
+<h2 id="sensor-checks">Sensor Checks</h2>
+<ul>
+<li>Missing required columns</li>
+<li>Invalid camera width or height</li>
+<li>Sensor rates that differ from configured expectations</li>
+<li>Likely missing frames based on timestamp gaps</li>
+</ul>
+<p>Camera CSVs require <code>timestamp</code>, <code>path</code>, <code>width</code>, and <code>height</code>. <code>filename</code> is accepted as a
+compatibility alias for <code>path</code> when <code>path</code> is absent.</p>
+<h2 id="calibration-checks">Calibration Checks</h2>
+<ul>
+<li>Missing calibration entries for declared sensors</li>
+<li>Invalid camera intrinsics shape or focal lengths</li>
+<li>Malformed extrinsics translation or quaternion</li>
+<li>Quaternion values that are not normalized</li>
+</ul>
+<h2 id="label-checks">Label Checks</h2>
+<p>Run only label diagnostics with:</p>
+<pre><code class="language-bash">datasetlint examples/minimal_dataset --checks labels
+</code></pre>
+<ul>
+<li>Missing detection label columns</li>
+<li>Confidence outside <code>[0, 1]</code></li>
+<li>Non-positive label width or height</li>
+<li>Label timestamps outside sensor time ranges</li>
+<li>Track IDs changing class more often than configured</li>
+<li>Duplicate <code>track_id</code> at the same timestamp</li>
+<li>Bounding box center jumps above <code>label_max_position_jump_px</code></li>
+<li>Missing timestamps inside a track</li>
+<li>Tracks shorter than <code>label_min_track_length</code></li>
+<li>Bounding box size changes above <code>label_max_size_change_ratio</code></li>
+</ul>
+<h2 id="trajectory-checks">Trajectory Checks</h2>
+<ul>
+<li>Missing trajectory columns</li>
+<li>NaN or infinite values</li>
+<li>Unrealistic speed or acceleration</li>
+<li>Yaw outside <code>[-pi, pi]</code></li>
+<li>Stationary or nearly stationary trajectories</li>
+</ul>
+<h2 id="check-groups">Check Groups</h2>
+<p><code>--checks</code> accepts a comma-separated list:</p>
+<ul>
+<li><code>files</code></li>
+<li><code>metadata</code></li>
+<li><code>timestamps</code></li>
+<li><code>sensors</code></li>
+<li><code>sync</code></li>
+<li><code>calibration</code></li>
+<li><code>labels</code></li>
+<li><code>trajectories</code></li>
+<li><code>all</code></li>
+</ul>
+<p>Examples:</p>
+<pre><code class="language-bash">datasetlint data/ --checks labels
+datasetlint data/ --checks sync
+datasetlint data/ --checks labels,sync
+</code></pre>
+<h2 id="related-configuration">Related Configuration</h2>
+<pre><code class="language-yaml">label_max_position_jump_px: 200
+label_max_size_change_ratio: 3.0
+label_min_track_length: 3
+label_class_switch_threshold: 0
+max_pairwise_sync_gap_sec: 0.05
+timestamp_gap_threshold_sec: 0.5
+max_timestamp_gap_sec: 0.5
+min_overlap_ratio: 0.8
+frequency_jitter_ratio: 0.2
+</code></pre>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../quickstart/" class="btn btn-neutral float-left" title="Quickstart"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../reports/" class="btn btn-neutral float-right" title="Reports">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/gagandeepreehal/datasetlint" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../quickstart/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../reports/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

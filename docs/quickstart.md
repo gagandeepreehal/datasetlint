@@ -1,25 +1,47 @@
 # Quickstart
 
-Install the package:
+DatasetLint is a lightweight local-first dataset validation, dataset QA, and
+robotics data quality toolkit for robotics and Physical AI datasets.
+
+## Install
 
 DatasetLint requires Python 3.10 or newer. On macOS, the system `python3` may be
 Python 3.9; install a newer interpreter first:
 
 ```bash
 brew install python@3.11
-python3.11 -m pip install datasetlint
 ```
+
+Use the source checkout path until a public PyPI release is published and
+verified:
 
 ```bash
-pip install datasetlint
+python3.11 -m pip install -e ".[dev]"
 ```
 
-Run the CLI:
+## Try In 60 Seconds
 
 ```bash
 datasetlint examples/minimal_dataset
+datasetlint report examples/bad_dataset --out report.md
+datasetlint report examples/bad_dataset --out report.html
+```
+
+`examples/minimal_dataset` should pass. `examples/bad_dataset` should fail with
+concrete issues such as missing references, duplicate timestamps, invalid
+calibration, invalid label geometry, and unrealistic trajectory speed.
+
+## CLI Basics
+
+The `examples/...` paths below assume a source checkout. If you installed only
+the wheel, replace them with paths to datasets on your machine.
+
+```bash
+datasetlint examples/minimal_dataset
+datasetlint lint examples/minimal_dataset
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
+datasetlint examples/minimal_dataset --format html
 datasetlint examples/minimal_dataset --checks labels
 datasetlint examples/minimal_dataset --checks sync
 datasetlint stats examples/minimal_dataset
@@ -77,3 +99,9 @@ alias for `path` if `path` is not present:
 timestamp,path,width,height
 0.0,images/000001.jpg,1280,720
 ```
+
+## Adapter Expectations
+
+Deep validation works best on the native DatasetLint folder format. MCAP, ROS
+bag, Waymo, NuScenes, KITTI, COCO, and Hugging Face inputs are currently
+index-level or manifest-level unless optional parsers are implemented later.

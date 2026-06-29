@@ -7,13 +7,31 @@ from typing import Any
 
 import pandas as pd
 
-from datasetlint.adapters.base import DatasetAdapter, DatasetMetadata, SensorInfo
+from datasetlint.adapters.base import AdapterCoverage, DatasetAdapter, DatasetMetadata, SensorInfo
 
 
 class NuScenesAdapter(DatasetAdapter):
     """Detect NuScenes-like folder structures without parsing the full schema."""
 
     name = "nuscenes"
+
+    def coverage(self) -> AdapterCoverage:
+        return AdapterCoverage(
+            validation_mode="index-level",
+            checked=[
+                "NuScenes version directory markers",
+                "core metadata filename presence",
+            ],
+            not_checked=[
+                "NuScenes relational schema",
+                "sample data references",
+                "ego poses",
+                "calibration",
+                "annotations",
+                "sensor synchronization",
+            ],
+            limitations=["NuScenes deep parsing is not implemented in DatasetLint v0."],
+        )
 
     def can_load(self, path: str | Path) -> bool:
         dataset_path = Path(path)

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Adapters - DatasetLint</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Adapters";
+        var mkdocs_page_input_path = "adapters.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> DatasetLint
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../checks/">Checks</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../reports/">Reports</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../stats/">Stats</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../diff/">Diff</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Adapters</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#folder-adapter">Folder Adapter</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#coverage-modes">Coverage Modes</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#non-native-adapters">Non-Native Adapters</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../ci/">CI Templates</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../release-checklist/">Release Checklist</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">DatasetLint</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Adapters</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/gagandeepreehal/datasetlint/edit/master/docs/adapters.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="adapters">Adapters</h1>
+<p>DatasetLint v0 keeps the native folder format as the fully supported adapter and
+adds lightweight detection for common robotics dataset containers.</p>
+<p>Commands using <code>examples/...</code> assume a source checkout. For wheel-only installs,
+replace them with paths to local datasets.</p>
+<pre><code class="language-bash">datasetlint adapters examples/minimal_dataset
+datasetlint examples/minimal_dataset --adapter folder
+datasetlint examples/minimal_dataset --adapter auto
+</code></pre>
+<p>Python:</p>
+<pre><code class="language-python">from datasetlint.adapters import get_adapter
+
+adapter = get_adapter(&quot;examples/minimal_dataset&quot;, &quot;auto&quot;)
+metadata = adapter.load_metadata(&quot;examples/minimal_dataset&quot;)
+</code></pre>
+<h2 id="folder-adapter">Folder Adapter</h2>
+<p><code>FolderAdapter</code> fully supports the current DatasetLint layout:</p>
+<pre><code class="language-text">metadata.json
+calibration.json
+sensors/*.csv
+labels/detections.csv
+trajectories/*.csv
+</code></pre>
+<p>It can load metadata, sensor listings, timestamps, labels, trajectories, and
+calibration. Reports mark this as <code>deep</code> validation.</p>
+<h2 id="coverage-modes">Coverage Modes</h2>
+<p>Validation reports include adapter coverage:</p>
+<ul>
+<li><code>deep</code>: native DatasetLint folder validation with checks over loaded JSON and
+  CSV tables.</li>
+<li><code>manifest-level</code>: manifest files can be parsed or inspected, but common deep
+  robotics rules do not yet run over that format.</li>
+<li><code>index-level</code>: DatasetLint detects likely files or directories and records
+  what was present, but it does not parse the format deeply.</li>
+</ul>
+<h2 id="non-native-adapters">Non-Native Adapters</h2>
+<p>The following adapters detect likely dataset inputs but do not deeply parse them
+in v0:</p>
+<table>
+<thead>
+<tr>
+<th>Adapter</th>
+<th>Mode</th>
+<th>Checked</th>
+<th>Not Checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MCAPAdapter</code></td>
+<td>index-level</td>
+<td><code>.mcap</code> file presence and size metadata</td>
+<td>channels, schemas, message timestamps, sync, calibration, labels, trajectories</td>
+</tr>
+<tr>
+<td><code>ROSBagAdapter</code></td>
+<td>index-level</td>
+<td><code>.bag</code> file presence</td>
+<td>ROS connections, message timestamps, sync, calibration topics, labels, trajectories</td>
+</tr>
+<tr>
+<td><code>WaymoAdapter</code></td>
+<td>index-level</td>
+<td><code>.tfrecord</code> file presence</td>
+<td>TFRecord parsing, Waymo frame protos, timestamps, calibration, labels, trajectories</td>
+</tr>
+<tr>
+<td><code>NuScenesAdapter</code></td>
+<td>index-level</td>
+<td>version directory markers and core metadata filename presence</td>
+<td>relational schema, sample data references, ego poses, calibration, annotations, sync</td>
+</tr>
+<tr>
+<td><code>KITTIAdapter</code></td>
+<td>index-level</td>
+<td>common KITTI directory markers</td>
+<td>calibration contents, image/lidar matching, timestamps, label geometry, trajectories</td>
+</tr>
+<tr>
+<td><code>COCOAdapter</code></td>
+<td>manifest-level</td>
+<td>COCO JSON parseability and top-level <code>images</code>/<code>annotations</code> keys</td>
+<td>image existence, taxonomy semantics, robotics timestamps, sync, calibration, trajectories</td>
+</tr>
+<tr>
+<td><code>HuggingFaceAdapter</code></td>
+<td>manifest-level</td>
+<td>metadata files and Arrow or Parquet shard presence</td>
+<td>feature semantics, media references, robotics timestamps, sync, calibration, labels, trajectories</td>
+</tr>
+</tbody>
+</table>
+<p>Deep parsing raises <code>NotImplementedError</code> with an actionable message. Convert
+these datasets to the folder CSV format before linting with v0, or add an
+optional parser-backed adapter in a future release.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../diff/" class="btn btn-neutral float-left" title="Diff"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../ci/" class="btn btn-neutral float-right" title="CI Templates">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/gagandeepreehal/datasetlint" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../diff/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../ci/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

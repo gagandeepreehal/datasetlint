@@ -1,0 +1,493 @@
+{
+  "dataset_path": "examples/bad_dataset",
+  "issues": [
+    {
+      "check_name": "check_missing_sensor_files",
+      "file": "sensors/gps.csv",
+      "message": "Metadata declares sensor 'gps', but sensors/gps.csv is missing.",
+      "metadata": {
+        "sensor": "gps"
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_broken_paths",
+      "file": "sensors/camera_front.csv",
+      "message": "Referenced file does not exist: images/missing.jpg.",
+      "metadata": {
+        "path": "images/missing.jpg"
+      },
+      "row": 2,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_broken_paths",
+      "file": "sensors/camera_front.csv",
+      "message": "Referenced file does not exist: images/also_missing.jpg.",
+      "metadata": {
+        "path": "images/also_missing.jpg"
+      },
+      "row": 3,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_broken_paths",
+      "file": "sensors/camera_front.csv",
+      "message": "Referenced file does not exist: images/000003.jpg.",
+      "metadata": {
+        "path": "images/000003.jpg"
+      },
+      "row": 4,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_declared_sensors_exist",
+      "file": "metadata.json",
+      "message": "Declared sensor 'gps' has no matching CSV in sensors/.",
+      "metadata": {
+        "sensor": "gps"
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_duration_matches_timestamps",
+      "file": "metadata.json",
+      "message": "metadata duration_sec does not match observed timestamp span.",
+      "metadata": {
+        "declared_duration_sec": 10.0,
+        "observed_duration_sec": 30.1
+      },
+      "row": null,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_dataset_version_present",
+      "file": "metadata.json",
+      "message": "metadata.json should include a non-empty version string.",
+      "metadata": {},
+      "row": null,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_duplicate_timestamps",
+      "file": "sensors/camera_front.csv",
+      "message": "Duplicate timestamp.",
+      "metadata": {
+        "timestamp": 0.0
+      },
+      "row": 3,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_large_timestamp_gaps",
+      "file": "sensors/camera_front.csv",
+      "message": "Timestamp gap exceeds 0.500s.",
+      "metadata": {
+        "gap_sec": 2.0,
+        "threshold_sec": 0.5
+      },
+      "row": 4,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_sensor_dimensions",
+      "file": "sensors/camera_front.csv",
+      "message": "Camera width and height must be positive numbers.",
+      "metadata": {
+        "sensor": "camera_front"
+      },
+      "row": 3,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_sensor_frequency",
+      "file": "sensors/camera_front.csv",
+      "message": "Observed sensor rate differs from expected rate.",
+      "metadata": {
+        "expected_hz": 10.0,
+        "observed_hz": 0.5,
+        "sensor": "camera_front"
+      },
+      "row": null,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_missing_frames",
+      "file": "sensors/camera_front.csv",
+      "message": "Likely missing frame based on timestamp gap.",
+      "metadata": {
+        "expected_gap_sec": 0.1,
+        "gap_sec": 2.0,
+        "sensor": "camera_front"
+      },
+      "row": 4,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_sensor_time_overlap",
+      "file": null,
+      "message": "Sensor timestamp ranges do not overlap; align sensor streams before training.",
+      "metadata": {
+        "sensors": {
+          "camera_front": {
+            "duration_sec": 2.0,
+            "end_time": 2.0,
+            "frame_count": 3.0,
+            "inferred_frequency_hz": 0.5,
+            "max_dt_sec": 2.0,
+            "median_dt_sec": 2.0,
+            "start_time": 0.0
+          },
+          "imu": {
+            "duration_sec": 0.010000000000001563,
+            "end_time": 20.01,
+            "frame_count": 2.0,
+            "inferred_frequency_hz": 99.99999999998437,
+            "max_dt_sec": 0.010000000000001563,
+            "median_dt_sec": 0.010000000000001563,
+            "start_time": 20.0
+          }
+        }
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_timestamp_offset",
+      "file": null,
+      "message": "Sensor stream start times differ more than configured.",
+      "metadata": {
+        "sensor_a": "camera_front",
+        "sensor_b": "imu",
+        "start_offset_sec": 20.0,
+        "threshold_sec": 0.05
+      },
+      "row": null,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_pairwise_sync_gap",
+      "file": null,
+      "message": "Pairwise sensor timestamp gap exceeds configured median threshold.",
+      "metadata": {
+        "max_gap_sec": 18.01,
+        "median_gap_sec": 18.005000000000003,
+        "sensor_a": "camera_front",
+        "sensor_b": "imu",
+        "threshold_sec": 0.05
+      },
+      "row": null,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_missing_frame_bursts",
+      "file": "sensors/camera_front.csv",
+      "message": "Sensor has a burst-sized timestamp gap; inspect dropped frames or logging stalls.",
+      "metadata": {
+        "estimated_missing_frames": 1,
+        "gap_sec": 2.0,
+        "sensor": "camera_front",
+        "threshold_sec": 0.5
+      },
+      "row": 4,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_calibration_exists",
+      "file": "calibration.json",
+      "message": "Missing calibration entry for sensor 'imu'.",
+      "metadata": {
+        "sensor": "imu"
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_calibration_exists",
+      "file": "calibration.json",
+      "message": "Missing calibration entry for sensor 'gps'.",
+      "metadata": {
+        "sensor": "gps"
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_intrinsics_shape",
+      "file": "calibration.json",
+      "message": "Calibration intrinsics for 'camera_front' must be a 3x3 matrix.",
+      "metadata": {
+        "sensor": "camera_front"
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_extrinsics_shape",
+      "file": "calibration.json",
+      "message": "Calibration extrinsics for 'camera_front' must include translation[3] and rotation_quat[4].",
+      "metadata": {
+        "sensor": "camera_front"
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_quaternion_norm",
+      "file": "calibration.json",
+      "message": "Quaternion for 'camera_front' is not normalized.",
+      "metadata": {
+        "norm": 2.0,
+        "sensor": "camera_front"
+      },
+      "row": null,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_label_confidence_range",
+      "file": "labels/detections.csv",
+      "message": "Label confidence must be in [0, 1].",
+      "metadata": {},
+      "row": 2,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_label_geometry",
+      "file": "labels/detections.csv",
+      "message": "Label width and height must be positive.",
+      "metadata": {},
+      "row": 2,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_label_timestamps_match_sensor_range",
+      "file": "labels/detections.csv",
+      "message": "Label timestamp is outside the observed sensor timestamp range.",
+      "metadata": {
+        "max_sensor_time": 20.01,
+        "min_sensor_time": 0.0
+      },
+      "row": 2,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_label_timestamps_match_sensor_range",
+      "file": "labels/detections.csv",
+      "message": "Label timestamp is outside the observed sensor timestamp range.",
+      "metadata": {
+        "max_sensor_time": 20.01,
+        "min_sensor_time": 0.0
+      },
+      "row": 3,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_track_id_consistency",
+      "file": "labels/detections.csv",
+      "message": "Track ID changes class more often than configured.",
+      "metadata": {
+        "class_switches": 1,
+        "classes": [
+          "car",
+          "pedestrian"
+        ],
+        "threshold": 0,
+        "track_id": "track-1"
+      },
+      "row": null,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_short_tracks",
+      "file": "labels/detections.csv",
+      "message": "Track is shorter than configured minimum length.",
+      "metadata": {
+        "minimum_track_length": 3,
+        "track_id": "track-1",
+        "track_length": 2
+      },
+      "row": null,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_unrealistic_speed",
+      "file": "trajectories/ego.csv",
+      "message": "Trajectory speed exceeds configured maximum.",
+      "metadata": {
+        "max_speed_mps": 70.0,
+        "speed_mps": 100.0
+      },
+      "row": 3,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_unrealistic_acceleration",
+      "file": "trajectories/ego.csv",
+      "message": "Trajectory acceleration exceeds configured maximum.",
+      "metadata": {
+        "acceleration_mps2": 900.0,
+        "max_accel_mps2": 12.0
+      },
+      "row": 3,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_unrealistic_acceleration",
+      "file": "trajectories/ego.csv",
+      "message": "Trajectory acceleration exceeds configured maximum.",
+      "metadata": {
+        "acceleration_mps2": -900.0,
+        "max_accel_mps2": 12.0
+      },
+      "row": 4,
+      "severity": "warning"
+    },
+    {
+      "check_name": "check_yaw_range",
+      "file": "trajectories/ego.csv",
+      "message": "Yaw should be in [-pi, pi].",
+      "metadata": {},
+      "row": 3,
+      "severity": "warning"
+    }
+  ],
+  "passed": false,
+  "stats": {
+    "adapter": {
+      "checked": [
+        "native DatasetLint folder layout",
+        "metadata schema",
+        "required files",
+        "CSV parseability",
+        "broken file references",
+        "timestamps and timestamp gaps",
+        "sensor synchronization",
+        "calibration and camera intrinsics",
+        "labels and track consistency",
+        "trajectories"
+      ],
+      "limitations": [
+        "Deep validation is designed for the native DatasetLint folder format."
+      ],
+      "name": "folder",
+      "not_checked": [
+        "image pixel decoding",
+        "point cloud payload decoding",
+        "semantic correctness of labels"
+      ],
+      "validation_mode": "deep"
+    },
+    "checks_run": [
+      "check_required_files",
+      "check_empty_files",
+      "check_missing_sensor_files",
+      "check_broken_paths",
+      "check_duplicate_filenames",
+      "check_metadata_schema",
+      "check_declared_sensors_exist",
+      "check_duration_matches_timestamps",
+      "check_dataset_version_present",
+      "check_monotonic_timestamps",
+      "check_duplicate_timestamps",
+      "check_large_timestamp_gaps",
+      "check_sensor_columns",
+      "check_sensor_dimensions",
+      "check_sensor_frequency",
+      "check_missing_frames",
+      "check_sensor_time_overlap",
+      "check_timestamp_offset",
+      "check_pairwise_sync_gap",
+      "check_missing_frame_bursts",
+      "check_frequency_stability",
+      "check_calibration_exists",
+      "check_intrinsics_shape",
+      "check_intrinsics_values",
+      "check_extrinsics_shape",
+      "check_quaternion_norm",
+      "check_label_columns",
+      "check_label_confidence_range",
+      "check_label_geometry",
+      "check_label_timestamps_match_sensor_range",
+      "check_track_id_consistency",
+      "check_label_bbox_jumps",
+      "check_label_missing_timestamps",
+      "check_duplicate_track_id_timestamp",
+      "check_short_tracks",
+      "check_label_size_changes",
+      "check_trajectory_columns",
+      "check_trajectory_finite_values",
+      "check_unrealistic_speed",
+      "check_unrealistic_acceleration",
+      "check_yaw_range",
+      "check_stationary_dataset"
+    ],
+    "config": {
+      "duration_drop_ratio_warning": 0.1,
+      "duration_tolerance_sec": 1.0,
+      "expected_sensor_rates": {
+        "camera_front": 10.0,
+        "camera_rear": 10.0,
+        "gps": 10.0,
+        "imu": 100.0
+      },
+      "frame_count_drop_ratio_warning": 0.1,
+      "frequency_jitter_ratio": 0.2,
+      "frequency_tolerance_fraction": 0.3,
+      "issue_regression_severity": "warning",
+      "label_class_switch_threshold": 0,
+      "label_max_position_jump_px": 200.0,
+      "label_max_size_change_ratio": 3.0,
+      "label_min_track_length": 3,
+      "max_accel_mps2": 12.0,
+      "max_pairwise_sync_gap_sec": 0.05,
+      "max_speed_mps": 70.0,
+      "max_timestamp_gap_sec": 0.5,
+      "min_overlap_ratio": 0.8,
+      "missing_frame_gap_multiplier": 1.5,
+      "stationary_distance_threshold_m": 0.05,
+      "timestamp_gap_threshold_sec": 0.5
+    },
+    "dataset_fingerprint": "sha256:8880b5deefbb54dd5bb2c4004e94138becb08fc4c953476c82b13f28568158b8",
+    "declared_sensor_count": 3,
+    "issue_count": 31,
+    "issue_count_by_severity": {
+      "error": 16,
+      "info": 0,
+      "warning": 15
+    },
+    "label_file_count": 1,
+    "sensor_count": 2,
+    "sync": {
+      "overlap_duration_sec": 0.0,
+      "pairwise_gaps": {
+        "camera_front:imu": {
+          "max_gap_sec": 18.01,
+          "median_gap_sec": 18.005000000000003
+        }
+      },
+      "sensors": {
+        "camera_front": {
+          "duration_sec": 2.0,
+          "end_time": 2.0,
+          "frame_count": 3.0,
+          "inferred_frequency_hz": 0.5,
+          "max_dt_sec": 2.0,
+          "median_dt_sec": 2.0,
+          "start_time": 0.0
+        },
+        "imu": {
+          "duration_sec": 0.010000000000001563,
+          "end_time": 20.01,
+          "frame_count": 2.0,
+          "inferred_frequency_hz": 99.99999999998437,
+          "max_dt_sec": 0.010000000000001563,
+          "median_dt_sec": 0.010000000000001563,
+          "start_time": 20.0
+        }
+      }
+    },
+    "trajectory_file_count": 1
+  }
+}

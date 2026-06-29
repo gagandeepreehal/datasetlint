@@ -16,7 +16,7 @@ from datasetlint.adapters import detect_adapters
 from datasetlint.core import lint_dataset, validate_checks
 from datasetlint.diff import DatasetDiffReport, compare_datasets
 from datasetlint.formatters.console import print_report
-from datasetlint.report import should_fail
+from datasetlint.report import LintReport, should_fail
 from datasetlint.stats import DatasetStats, compute_dataset_stats
 
 app = typer.Typer(add_completion=False, help="Validate robotics and Physical AI datasets.")
@@ -26,6 +26,7 @@ class OutputFormat(str, Enum):
     console = "console"
     json = "json"
     markdown = "markdown"
+    html = "html"
 
 
 class FailLevel(str, Enum):
@@ -46,7 +47,8 @@ def main(
         list[str],
         typer.Argument(
             help=(
-                "Dataset path, or one of: stats DATASET, diff OLD NEW, adapters DATASET."
+                "Dataset path, or one of: lint DATASET, report DATASET, stats DATASET, "
+                "diff OLD NEW, adapters DATASET."
             )
         ),
     ],
@@ -62,7 +64,7 @@ def main(
     ] = None,
     adapter: Annotated[
         str,
-        typer.Option("--adapter", help="Dataset adapter name: folder or auto."),
+        typer.Option("--adapter", help="Dataset adapter name, such as folder, auto, or mcap."),
     ] = "folder",
     version: Annotated[
         bool | None,
@@ -77,12 +79,25 @@ def main(
         bool,
         typer.Option("--fail-on-regression", help="Exit non-zero when diff regressions exist."),
     ] = False,
+    out: Annotated[
+        Path | None,
+        typer.Option("--out", help="Write `report DATASET --out report.html`."),
+    ] = None,
 ) -> None:
     del version
     if not args:
-        _usage_error("Provide a dataset path, stats DATASET, diff OLD NEW, or adapters DATASET.")
+        _usage_error(
+            "Provide a dataset path, lint DATASET, report DATASET, stats DATASET, "
+            "diff OLD NEW, or adapters DATASET."
+        )
 
     command = args[0]
+    if command == "lint":
+        _run_lint(args[1:], config, checks, adapter, format, fail_on)
+        return
+    if command == "report":
+        _run_report(args[1:], config, checks, adapter, out)
+        return
     if command == "stats":
         _run_stats(args[1:], config, format)
         return
@@ -93,6 +108,19 @@ def main(
         _run_adapters(args[1:], format)
         return
 
+    if out is not None:
+        _usage_error("--out is only supported with `datasetlint report DATASET --out PATH`.")
+    _run_lint(args, config, checks, adapter, format, fail_on)
+
+
+def _run_lint(
+    args: list[str],
+    config: Path | None,
+    checks: str | None,
+    adapter: str,
+    format: OutputFormat,
+    fail_on: FailLevel,
+) -> None:
     if len(args) != 1:
         _usage_error("Lint expects one dataset path.")
     try:
@@ -100,15 +128,10 @@ def main(
     except ValueError as exc:
         _usage_error(str(exc))
     try:
-        report = lint_dataset(path=Path(command), config=config, checks=checks, adapter=adapter)
+        report = lint_dataset(path=Path(args[0]), config=config, checks=checks, adapter=adapter)
     except ValueError as exc:
         _usage_error(str(exc))
-    if format is OutputFormat.json:
-        typer.echo(report.to_json())
-    elif format is OutputFormat.markdown:
-        typer.echo(report.to_markdown())
-    else:
-        print_report(report)
+    _emit_lint_report(report, format)
     if should_fail(report, fail_on.value):
         raise typer.Exit(1)
 
@@ -116,6 +139,8 @@ def main(
 def _run_stats(args: list[str], config: Path | None, format: OutputFormat) -> None:
     if len(args) != 1:
         _usage_error("stats expects one dataset path.")
+    if format is OutputFormat.html:
+        _usage_error("stats does not support --format html.")
     stats = compute_dataset_stats(Path(args[0]), config=config)
     if format is OutputFormat.json:
         typer.echo(stats.to_json())
@@ -133,6 +158,8 @@ def _run_diff(
 ) -> None:
     if len(args) != 2:
         _usage_error("diff expects OLD_DATASET and NEW_DATASET paths.")
+    if format is OutputFormat.html:
+        _usage_error("diff does not support --format html.")
     report = compare_datasets(Path(args[0]), Path(args[1]), config=config)
     if format is OutputFormat.json:
         typer.echo(report.to_json())
@@ -147,6 +174,8 @@ def _run_diff(
 def _run_adapters(args: list[str], format: OutputFormat) -> None:
     if len(args) != 1:
         _usage_error("adapters expects one dataset path.")
+    if format is OutputFormat.html:
+        _usage_error("adapters does not support --format html.")
     detections = detect_adapters(Path(args[0]))
     if format is OutputFormat.json:
         typer.echo(json.dumps([detection.model_dump() for detection in detections], indent=2))
@@ -154,12 +183,13 @@ def _run_adapters(args: list[str], format: OutputFormat) -> None:
         lines = [
             "# DatasetLint Adapters",
             "",
-            "| Adapter | Detected | Message |",
-            "| --- | --- | --- |",
+            "| Adapter | Detected | Validation mode | Message |",
+            "| --- | --- | --- | --- |",
         ]
         for detection in detections:
             lines.append(
-                f"| {detection.name} | `{detection.can_load}` | {detection.message} |"
+                f"| {detection.name} | `{detection.can_load}` | "
+                f"{detection.validation_mode} | {detection.message} |"
             )
         typer.echo("\n".join(lines) + "\n")
     else:
@@ -167,10 +197,60 @@ def _run_adapters(args: list[str], format: OutputFormat) -> None:
         table = Table(title="Dataset Adapters")
         table.add_column("Adapter")
         table.add_column("Detected")
+        table.add_column("Mode")
         table.add_column("Message")
         for detection in detections:
-            table.add_row(detection.name, str(detection.can_load), detection.message)
+            table.add_row(
+                detection.name,
+                str(detection.can_load),
+                detection.validation_mode,
+                detection.message,
+            )
         console.print(table)
+
+
+def _run_report(
+    args: list[str],
+    config: Path | None,
+    checks: str | None,
+    adapter: str,
+    out: Path | None,
+) -> None:
+    if len(args) != 1:
+        _usage_error("report expects one dataset path.")
+    if out is None:
+        _usage_error("report expects --out PATH.")
+    try:
+        validate_checks(checks)
+    except ValueError as exc:
+        _usage_error(str(exc))
+    try:
+        report = lint_dataset(path=Path(args[0]), config=config, checks=checks, adapter=adapter)
+    except ValueError as exc:
+        _usage_error(str(exc))
+
+    suffix = out.suffix.lower()
+    if suffix == ".html":
+        content = report.to_html()
+    elif suffix == ".json":
+        content = report.to_json() + "\n"
+    elif suffix in {".md", ".markdown"}:
+        content = report.to_markdown()
+    else:
+        _usage_error("report --out supports .html, .json, .md, and .markdown files.")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(content, encoding="utf-8")
+
+
+def _emit_lint_report(report: LintReport, format: OutputFormat) -> None:
+    if format is OutputFormat.json:
+        typer.echo(report.to_json())
+    elif format is OutputFormat.markdown:
+        typer.echo(report.to_markdown())
+    elif format is OutputFormat.html:
+        typer.echo(report.to_html())
+    else:
+        print_report(report)
 
 
 def _print_stats(stats: DatasetStats) -> None:

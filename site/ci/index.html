@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>CI Templates - DatasetLint</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "CI Templates";
+        var mkdocs_page_input_path = "ci.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> DatasetLint
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../checks/">Checks</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../reports/">Reports</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../stats/">Stats</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../diff/">Diff</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../adapters/">Adapters</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">CI Templates</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#minimal-dataset-check">Minimal Dataset Check</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#fail-on-warning">Fail On Warning</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#save-report-artifacts">Save Report Artifacts</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#diff-old-and-new-datasets">Diff Old And New Datasets</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../release-checklist/">Release Checklist</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">DatasetLint</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">CI Templates</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/gagandeepreehal/datasetlint/edit/master/docs/ci.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="ci-templates">CI Templates</h1>
+<p>Use these snippets inside your own repository. This task only documents
+templates; it does not create a separate GitHub Action repository.</p>
+<h2 id="minimal-dataset-check">Minimal Dataset Check</h2>
+<pre><code class="language-yaml">name: DatasetLint
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  datasetlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: &quot;3.11&quot;
+      - name: Install DatasetLint
+        run: python -m pip install datasetlint
+      - name: Validate dataset
+        run: datasetlint data/robotics_dataset
+</code></pre>
+<p>If you are testing DatasetLint from a source checkout instead of a published
+package, replace the install step with:</p>
+<pre><code class="language-yaml">      - name: Install DatasetLint from source
+        run: python -m pip install -e &quot;.[dev]&quot;
+</code></pre>
+<h2 id="fail-on-warning">Fail On Warning</h2>
+<pre><code class="language-yaml">      - name: Validate dataset with warnings as failures
+        run: datasetlint data/robotics_dataset --fail-on warning
+</code></pre>
+<h2 id="save-report-artifacts">Save Report Artifacts</h2>
+<pre><code class="language-yaml">      - name: Generate DatasetLint reports
+        run: |
+          mkdir -p datasetlint-reports
+          datasetlint data/robotics_dataset --format json &gt; datasetlint-reports/report.json || true
+          datasetlint data/robotics_dataset --format markdown &gt; datasetlint-reports/report.md || true
+          datasetlint data/robotics_dataset --format html &gt; datasetlint-reports/report.html || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: datasetlint-reports
+          path: datasetlint-reports/
+</code></pre>
+<p>Use a separate gating step if the job should fail after artifacts are saved:</p>
+<pre><code class="language-yaml">      - name: Gate dataset quality
+        run: datasetlint data/robotics_dataset --fail-on error
+</code></pre>
+<h2 id="diff-old-and-new-datasets">Diff Old And New Datasets</h2>
+<pre><code class="language-yaml">      - name: Compare dataset versions
+        run: datasetlint diff data/baseline_dataset data/candidate_dataset --fail-on-regression
+</code></pre>
+<p>The diff command flags regressions such as removed sensors, frame-count drops,
+duration drops, calibration changes, disappeared label classes, and increased
+warning or error counts.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../adapters/" class="btn btn-neutral float-left" title="Adapters"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../architecture/" class="btn btn-neutral float-right" title="Architecture">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/gagandeepreehal/datasetlint" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../adapters/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../architecture/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

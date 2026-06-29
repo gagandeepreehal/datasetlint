@@ -2,6 +2,9 @@
 
 DatasetLint v0.1 supports simple folder-based datasets with `metadata.json`, `calibration.json`, `sensors/`, `labels/`, and `trajectories/`.
 
+Commands using `examples/...` assume a source checkout. For wheel-only installs,
+replace them with paths to local datasets.
+
 ## File Checks
 
 - Required `metadata.json` and `calibration.json`

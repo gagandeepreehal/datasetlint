@@ -1,8 +1,53 @@
 # DatasetLint
 
-DatasetLint catches timestamp drift, missing frames, broken calibration, invalid labels, and trajectory anomalies before they poison Physical AI training and evaluation pipelines.
+DatasetLint is a lightweight, local-first dataset validation, dataset QA, and robotics data quality toolkit for robotics and Physical AI datasets.
 
-DatasetLint is a lightweight, standalone Python library for validating folder-based robotics datasets. It runs on a MacBook without robots, simulators, GPUs, ROS, cloud services, or large models.
+It catches timestamp drift, missing frames, broken calibration, invalid labels, and trajectory anomalies before they poison training, evaluation, or replay pipelines. It runs without robots, simulators, GPUs, ROS, cloud services, or large models.
+
+## Current Limitations
+
+DatasetLint v0 is intentionally small and honest about coverage:
+
+- Deep validation works best on the native DatasetLint folder format: `metadata.json`, `calibration.json`, `sensors/*.csv`, `labels/*.csv`, and `trajectories/*.csv`.
+- Adapters provide format detection plus manifest, index, or export inspection where practical; they do not all provide deep validation.
+- MCAP, ROS bag, Waymo, NuScenes, KITTI, COCO, and Hugging Face dataset inputs are currently index-level or manifest-level unless optional parsers are implemented later.
+- DatasetLint validates structure, timing, calibration shape, labels, and trajectory consistency. It does not decode image pixels, point clouds, ROS messages, or model-ready tensors.
+- Public package installation should be verified during release. Until a published PyPI release is confirmed, use the source checkout install path below.
+
+## Try In 60 Seconds
+
+From a source checkout:
+
+```bash
+python3.11 -m venv .venv311
+.venv311/bin/python -m pip install -e ".[dev]"
+.venv311/bin/datasetlint examples/minimal_dataset
+.venv311/bin/datasetlint report examples/bad_dataset --out report.md
+.venv311/bin/datasetlint report examples/bad_dataset --out report.html
+```
+
+Expected shape:
+
+- `examples/minimal_dataset` should pass.
+- `examples/bad_dataset` should fail with concrete robotics data quality issues.
+- `report.html` is a static, local HTML report.
+
+## What DatasetLint Catches
+
+Concrete checks include:
+
+- Missing metadata such as `metadata.json` or required fields
+- Broken file references from camera CSV rows to image files
+- Duplicate timestamps
+- Timestamp gaps
+- Sensor sync gaps across streams
+- Missing calibration for declared sensors
+- Invalid camera intrinsics
+- Non-normalized quaternion values
+- Invalid label geometry such as non-positive boxes
+- Duplicate track ID at the same timestamp
+- Unrealistic trajectory speed
+- Dataset diff regression, such as removed sensors or increased warning/error counts
 
 ## Why Robotics Datasets Fail
 
@@ -24,28 +69,35 @@ Python 3.9; install a newer interpreter first, for example:
 
 ```bash
 brew install python@3.11
+```
+
+Source install:
+
+```bash
+python3.11 -m pip install -e ".[dev]"
+```
+
+After a public PyPI release is published and ownership is verified:
+
+```bash
 python3.11 -m pip install datasetlint
-```
-
-```bash
-pip install datasetlint
-```
-
-For local development:
-
-```bash
-python -m pip install -e ".[dev]"
 ```
 
 ## CLI Usage
 
+The `examples/...` paths below assume a source checkout. If you installed the
+wheel only, replace them with paths to datasets on your machine.
+
 ```bash
 datasetlint examples/minimal_dataset
+datasetlint lint examples/minimal_dataset
 datasetlint examples/minimal_dataset --checks labels
 datasetlint examples/minimal_dataset --checks sync
 datasetlint examples/minimal_dataset --adapter auto
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
+datasetlint report examples/bad_dataset --out report.md
+datasetlint report examples/bad_dataset --out report.html
 datasetlint examples/bad_dataset --fail-on error
 datasetlint stats examples/minimal_dataset --format console
 datasetlint stats examples/minimal_dataset --format json
@@ -63,6 +115,7 @@ from datasetlint.adapters import get_adapter
 report = lint_dataset(path="examples/minimal_dataset", config=None)
 print(report.summary())
 print(report.to_markdown())
+html = report.to_html()
 
 label_report = lint_dataset("examples/minimal_dataset", checks="labels")
 sync_report = lint_dataset("examples/minimal_dataset", checks="sync")
@@ -135,7 +188,8 @@ IMU CSVs require `timestamp,ax,ay,az,gx,gy,gz`; GPS CSVs require `timestamp,lat,
 DatasetLint report for /path/to/dataset: failed with 3 issue(s) (error=2, warning=1, info=0).
 ```
 
-JSON and Markdown outputs are available through `--format`.
+JSON, Markdown, and static HTML outputs are available through `--format`.
+Generated sample reports live under `examples/reports/`.
 
 Issue row numbers use spreadsheet-style 1-based rows: the CSV header is row 1 and the first
 data row is row 2.
@@ -146,7 +200,7 @@ data row is row 2.
 - Sensor synchronization checks report per-sensor timing, inferred rates, overlap duration, pairwise timestamp gaps, missing frame bursts, and frequency jitter.
 - `datasetlint stats` computes dataset distributions for sensors, labels, tracks, trajectories, missing frames, and issue severity counts.
 - `datasetlint diff` compares two datasets and classifies regressions such as removed sensors, frame-count drops, duration drops, calibration changes, disappeared label classes, and increased issue counts.
-- `datasetlint adapters` reports adapter detection. The folder adapter is fully supported; MCAP, ROS bag, NuScenes, and Waymo adapters are detection-only in v0 and raise clear `NotImplementedError` messages for deep parsing.
+- `datasetlint adapters` reports adapter detection, validation mode, checked surface, unchecked surface, and limitations. The folder adapter is fully supported; MCAP, ROS bag, Waymo, NuScenes, KITTI, COCO, and Hugging Face adapters are index-level or manifest-level in v0 and raise clear `NotImplementedError` messages for deep parsing.
 
 ## Contributing
 

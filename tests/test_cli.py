@@ -27,6 +27,32 @@ def test_cli_stats_json(tmp_path):
     assert '"frame_counts"' in result.stdout
 
 
+def test_cli_lint_alias_outputs_html(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["lint", str(dataset), "--format", "html"])
+
+    assert result.exit_code == 0
+    assert "<!doctype html>" in result.stdout
+    assert "DatasetLint Report" in result.stdout
+    assert "Validation mode" in result.stdout
+
+
+def test_cli_report_writes_html_file(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    output = tmp_path / "report.html"
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["report", str(dataset), "--out", str(output)])
+
+    assert result.exit_code == 0
+    assert result.stdout == ""
+    html = output.read_text(encoding="utf-8")
+    assert "<!doctype html>" in html
+    assert str(dataset) in html
+
+
 def test_cli_diff_fail_on_regression(tmp_path):
     old_dataset = write_good_dataset(tmp_path / "old")
     new_dataset = write_good_dataset(tmp_path / "new")

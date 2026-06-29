@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Architecture - DatasetLint</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Architecture";
+        var mkdocs_page_input_path = "architecture.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> DatasetLint
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../quickstart/">Quickstart</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../checks/">Checks</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../reports/">Reports</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../stats/">Stats</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../diff/">Diff</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../adapters/">Adapters</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../ci/">CI Templates</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Architecture</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#current-native-folder-linting">Current Native Folder Linting</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#normalized-datasetmanifest">Normalized DatasetManifest</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#future-validationcontext">Future ValidationContext</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#migration-plan">Migration Plan</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../release-checklist/">Release Checklist</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">DatasetLint</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Architecture</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/gagandeepreehal/datasetlint/edit/master/docs/architecture.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="architecture">Architecture</h1>
+<p>DatasetLint v0 keeps the production path simple: load a native folder dataset,
+build a <code>DatasetContext</code>, run check functions, and return a <code>LintReport</code>.</p>
+<h2 id="current-native-folder-linting">Current Native Folder Linting</h2>
+<p>The native folder format is the deep-validation path:</p>
+<pre><code class="language-text">metadata.json
+calibration.json
+sensors/*.csv
+labels/*.csv
+trajectories/*.csv
+</code></pre>
+<p><code>datasetlint.core.lint_dataset()</code> resolves the dataset path, loads
+<code>LintConfig</code>, selects check groups, loads JSON and CSV files into a
+<code>DatasetContext</code>, runs checks, and returns a <code>LintReport</code>.</p>
+<p>This keeps the public API small:</p>
+<pre><code class="language-python">from datasetlint import lint_dataset
+
+report = lint_dataset(&quot;examples/minimal_dataset&quot;)
+</code></pre>
+<h2 id="normalized-datasetmanifest">Normalized DatasetManifest</h2>
+<p>Adapters are the right place to inspect foreign formats without forcing heavy
+runtime dependencies. The next internal foundation should be a normalized
+<code>DatasetManifest</code> that records format-agnostic facts such as:</p>
+<ul>
+<li>Dataset root or source file</li>
+<li>Adapter name</li>
+<li>Validation mode: deep, manifest-level, or index-level</li>
+<li>Sensor streams and observed frame counts</li>
+<li>Timestamp ranges when available</li>
+<li>Label and trajectory file references when available</li>
+<li>Calibration references when available</li>
+<li>Known limitations for the source format</li>
+</ul>
+<p>Native folder datasets can produce a complete manifest. MCAP, ROS bag, Waymo,
+NuScenes, KITTI, COCO, and Hugging Face adapters can start with partial
+manifests that clearly state what was not checked.</p>
+<h2 id="future-validationcontext">Future ValidationContext</h2>
+<p>Common rules should eventually run over a <code>ValidationContext</code> built from the
+manifest plus optional loaded tables. That would let DatasetLint reuse checks
+for native and adapted datasets when the same normalized facts are available.</p>
+<p>The intended direction:</p>
+<pre><code class="language-text">source dataset -&gt; adapter -&gt; DatasetManifest -&gt; ValidationContext -&gt; checks -&gt; LintReport
+</code></pre>
+<p>The current <code>DatasetContext</code> should remain supported while this foundation
+lands. A future <code>ValidationContext</code> can wrap or supersede it once common checks
+no longer assume folder-local CSV files.</p>
+<h2 id="migration-plan">Migration Plan</h2>
+<ol>
+<li>Keep <code>lint_dataset(path, config=None, checks=None, adapter="folder")</code> stable.</li>
+<li>Add internal <code>DatasetManifest</code> models without changing public return types.</li>
+<li>Teach the folder adapter to emit a full manifest.</li>
+<li>Teach detection-only adapters to emit partial manifests with explicit
+   coverage and limitations.</li>
+<li>Move checks that only need normalized metadata, timestamps, or counts onto
+   the manifest-backed context.</li>
+<li>Keep folder-specific CSV checks in place until equivalent manifest-backed
+   data loaders exist.</li>
+<li>Add optional parser extras later, such as MCAP or ROS bag parsing, without
+   making them core runtime dependencies.</li>
+</ol>
+<p>This path improves real-format validation while preserving existing APIs and
+the local-first install footprint.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../ci/" class="btn btn-neutral float-left" title="CI Templates"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../release-checklist/" class="btn btn-neutral float-right" title="Release Checklist">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/gagandeepreehal/datasetlint" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href="../ci/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../release-checklist/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

@@ -7,13 +7,30 @@ from typing import Any
 
 import pandas as pd
 
-from datasetlint.adapters.base import DatasetAdapter, DatasetMetadata, SensorInfo
+from datasetlint.adapters.base import AdapterCoverage, DatasetAdapter, DatasetMetadata, SensorInfo
 
 
 class MCAPAdapter(DatasetAdapter):
     """Detect MCAP files without adding an MCAP runtime dependency."""
 
     name = "mcap"
+
+    def coverage(self) -> AdapterCoverage:
+        return AdapterCoverage(
+            validation_mode="index-level",
+            checked=["MCAP file extension", "file presence", "file size metadata"],
+            not_checked=[
+                "MCAP channels and schemas",
+                "message timestamps",
+                "sensor synchronization",
+                "calibration",
+                "labels",
+                "trajectories",
+            ],
+            limitations=[
+                "Optional MCAP parsing is not implemented in DatasetLint v0."
+            ],
+        )
 
     def can_load(self, path: str | Path) -> bool:
         dataset_path = Path(path)

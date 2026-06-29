@@ -7,13 +7,30 @@ from typing import Any
 
 import pandas as pd
 
-from datasetlint.adapters.base import DatasetAdapter, DatasetMetadata, SensorInfo
+from datasetlint.adapters.base import AdapterCoverage, DatasetAdapter, DatasetMetadata, SensorInfo
 
 
 class ROSBagAdapter(DatasetAdapter):
     """Detect ROS bag files without depending on ROS."""
 
     name = "rosbag"
+
+    def coverage(self) -> AdapterCoverage:
+        return AdapterCoverage(
+            validation_mode="index-level",
+            checked=["ROS bag file extension", "file presence"],
+            not_checked=[
+                "ROS connection metadata",
+                "message timestamps",
+                "sensor synchronization",
+                "calibration topics",
+                "labels",
+                "trajectories",
+            ],
+            limitations=[
+                "ROS bag parsing is not implemented and ROS is not a runtime dependency."
+            ],
+        )
 
     def can_load(self, path: str | Path) -> bool:
         dataset_path = Path(path)

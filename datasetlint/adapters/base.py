@@ -3,10 +3,21 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 from pydantic import BaseModel, Field
+
+ValidationMode = Literal["deep", "manifest-level", "index-level"]
+
+
+class AdapterCoverage(BaseModel):
+    """What an adapter validates without overstating parser coverage."""
+
+    validation_mode: ValidationMode
+    checked: list[str] = Field(default_factory=list)
+    not_checked: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
 
 
 class DatasetMetadata(BaseModel):
@@ -36,12 +47,34 @@ class AdapterDetection(BaseModel):
     name: str
     can_load: bool
     message: str
+    validation_mode: ValidationMode
+    checked: list[str] = Field(default_factory=list)
+    not_checked: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
 
 
 class DatasetAdapter:
     """Base class for dataset adapters."""
 
     name = "base"
+
+    def coverage(self) -> AdapterCoverage:
+        """Return validation coverage for reports and adapter discovery."""
+
+        return AdapterCoverage(
+            validation_mode="index-level",
+            checked=["adapter detection"],
+            not_checked=[
+                "metadata schema",
+                "file references",
+                "timestamps",
+                "sensor synchronization",
+                "calibration",
+                "labels",
+                "trajectories",
+            ],
+            limitations=["This adapter does not implement deep DatasetLint validation."],
+        )
 
     def can_load(self, path: str | Path) -> bool:
         raise NotImplementedError

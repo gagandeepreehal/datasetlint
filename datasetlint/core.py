@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -100,7 +101,9 @@ def lint_dataset(
 ) -> LintReport:
     """Validate a folder-based robotics dataset."""
 
-    dataset_path = Path(path).expanduser().resolve()
+    input_path = Path(path).expanduser()
+    dataset_label = str(input_path)
+    dataset_path = input_path.resolve()
     lint_config = load_config(dataset_path, config)
     try:
         selected_checks = _select_checks(checks)
@@ -112,11 +115,14 @@ def lint_dataset(
             file=str(dataset_path),
         )
         return LintReport(
-            dataset_path=str(dataset_path),
+            dataset_path=dataset_label,
             issues=[issue],
             stats={
                 "issue_count": 1,
                 "issue_count_by_severity": {"info": 0, "warning": 0, "error": 1},
+                "checks_run": [],
+                "dataset_fingerprint": _dataset_fingerprint(dataset_path),
+                "config": _config_summary(lint_config),
             },
             passed=False,
         )
@@ -130,10 +136,20 @@ def lint_dataset(
             file=str(dataset_path),
             metadata={"adapter": selected_adapter.name},
         )
+        stats = {
+            "issue_count": 1,
+            "issue_count_by_severity": {"info": 0, "warning": 0, "error": 1},
+            **_report_metadata(
+                dataset_path=dataset_path,
+                config=lint_config,
+                adapter=selected_adapter,
+                selected_checks=(),
+            ),
+        }
         return LintReport(
-            dataset_path=str(dataset_path),
+            dataset_path=dataset_label,
             issues=[issue],
-            stats={"issue_count": 1},
+            stats=stats,
             passed=False,
         )
 
@@ -145,9 +161,17 @@ def lint_dataset(
         issues.extend(check(ctx))
 
     stats = _build_stats(ctx, issues)
+    stats.update(
+        _report_metadata(
+            dataset_path=dataset_path,
+            config=lint_config,
+            adapter=selected_adapter,
+            selected_checks=selected_checks,
+        )
+    )
     passed = not any(issue.severity == "error" for issue in issues)
     return LintReport(
-        dataset_path=str(dataset_path),
+        dataset_path=dataset_label,
         issues=issues,
         stats=stats,
         passed=passed,
@@ -288,6 +312,53 @@ def _build_stats(ctx: DatasetContext, issues: list[Issue]) -> dict[str, Any]:
         "declared_sensor_count": len(ctx.declared_sensors()),
         "sync": sync.sensor_sync_diagnostics(ctx),
     }
+
+
+def _report_metadata(
+    *,
+    dataset_path: Path,
+    config: LintConfig,
+    adapter: DatasetAdapter,
+    selected_checks: tuple[Check, ...],
+) -> dict[str, Any]:
+    coverage = adapter.coverage()
+    return {
+        "checks_run": [check.__name__ for check in selected_checks],
+        "adapter": {
+            "name": adapter.name,
+            "validation_mode": coverage.validation_mode,
+            "checked": coverage.checked,
+            "not_checked": coverage.not_checked,
+            "limitations": coverage.limitations,
+        },
+        "dataset_fingerprint": _dataset_fingerprint(dataset_path),
+        "config": _config_summary(config),
+    }
+
+
+def _config_summary(config: LintConfig) -> dict[str, Any]:
+    return config.model_dump()
+
+
+def _dataset_fingerprint(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    digest = hashlib.sha256()
+    if path.is_file():
+        _update_fingerprint(digest, path, path.name)
+    elif path.is_dir():
+        for file_path in sorted(item for item in path.rglob("*") if item.is_file()):
+            _update_fingerprint(digest, file_path, file_path.relative_to(path).as_posix())
+    else:
+        return None
+    return f"sha256:{digest.hexdigest()}"
+
+
+def _update_fingerprint(digest: Any, path: Path, label: str) -> None:
+    digest.update(label.encode("utf-8"))
+    digest.update(b"\0")
+    digest.update(path.read_bytes())
+    digest.update(b"\0")
 
 
 def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Check, ...]:

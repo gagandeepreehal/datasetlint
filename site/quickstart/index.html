@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../img/favicon.ico" />
+    <title>Quickstart - DatasetLint</title>
+    <link rel="stylesheet" href="../css/theme.css" />
+    <link rel="stylesheet" href="../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Quickstart";
+        var mkdocs_page_input_path = "quickstart.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href=".." class="icon icon-home"> DatasetLint
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Quickstart</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#install">Install</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#try-in-60-seconds">Try In 60 Seconds</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#cli-basics">CLI Basics</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#adapter-expectations">Adapter Expectations</a>
+    </li>
+    </ul>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../checks/">Checks</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../reports/">Reports</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../stats/">Stats</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../diff/">Diff</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../adapters/">Adapters</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../ci/">CI Templates</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../architecture/">Architecture</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../release-checklist/">Release Checklist</a>
+                </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="..">DatasetLint</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Quickstart</li>
+    <li class="wy-breadcrumbs-aside">
+          <a href="https://github.com/gagandeepreehal/datasetlint/edit/master/docs/quickstart.md" class="icon icon-github"> Edit on GitHub</a>
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <h1 id="quickstart">Quickstart</h1>
+<p>DatasetLint is a lightweight local-first dataset validation, dataset QA, and
+robotics data quality toolkit for robotics and Physical AI datasets.</p>
+<h2 id="install">Install</h2>
+<p>DatasetLint requires Python 3.10 or newer. On macOS, the system <code>python3</code> may be
+Python 3.9; install a newer interpreter first:</p>
+<pre><code class="language-bash">brew install python@3.11
+</code></pre>
+<p>Use the source checkout path until a public PyPI release is published and
+verified:</p>
+<pre><code class="language-bash">python3.11 -m pip install -e &quot;.[dev]&quot;
+</code></pre>
+<h2 id="try-in-60-seconds">Try In 60 Seconds</h2>
+<pre><code class="language-bash">datasetlint examples/minimal_dataset
+datasetlint report examples/bad_dataset --out report.md
+datasetlint report examples/bad_dataset --out report.html
+</code></pre>
+<p><code>examples/minimal_dataset</code> should pass. <code>examples/bad_dataset</code> should fail with
+concrete issues such as missing references, duplicate timestamps, invalid
+calibration, invalid label geometry, and unrealistic trajectory speed.</p>
+<h2 id="cli-basics">CLI Basics</h2>
+<p>The <code>examples/...</code> paths below assume a source checkout. If you installed only
+the wheel, replace them with paths to datasets on your machine.</p>
+<pre><code class="language-bash">datasetlint examples/minimal_dataset
+datasetlint lint examples/minimal_dataset
+datasetlint examples/minimal_dataset --format json
+datasetlint examples/minimal_dataset --format markdown
+datasetlint examples/minimal_dataset --format html
+datasetlint examples/minimal_dataset --checks labels
+datasetlint examples/minimal_dataset --checks sync
+datasetlint stats examples/minimal_dataset
+datasetlint diff examples/minimal_dataset examples/bad_dataset
+datasetlint adapters examples/minimal_dataset
+</code></pre>
+<p>Use the Python API:</p>
+<pre><code class="language-python">from datasetlint import compare_datasets, compute_dataset_stats, lint_dataset
+
+report = lint_dataset(&quot;examples/minimal_dataset&quot;)
+print(report.summary())
+
+stats = compute_dataset_stats(&quot;examples/minimal_dataset&quot;)
+diff = compare_datasets(&quot;examples/minimal_dataset&quot;, &quot;examples/bad_dataset&quot;)
+</code></pre>
+<p>Configure thresholds with <code>datasetlint.yaml</code> in the dataset folder:</p>
+<pre><code class="language-yaml">timestamp_gap_threshold_sec: 0.5
+max_pairwise_sync_gap_sec: 0.05
+max_timestamp_gap_sec: 0.5
+label_max_position_jump_px: 200
+label_max_size_change_ratio: 3.0
+label_min_track_length: 3
+max_speed_mps: 70
+max_accel_mps2: 12
+expected_sensor_rates:
+  camera_front: 10
+  imu: 100
+  gps: 10
+</code></pre>
+<p><code>timestamp_gap_threshold_sec</code> is the general timestamp gap threshold. <code>max_timestamp_gap_sec</code>
+is used by synchronization diagnostics and stats for sensor-stream burst gaps.</p>
+<p>A minimal <code>metadata.json</code> uses <code>dataset_name</code>:</p>
+<pre><code class="language-json">{
+  &quot;dataset_name&quot;: &quot;sample_log&quot;,
+  &quot;version&quot;: &quot;0.1&quot;,
+  &quot;sensors&quot;: [&quot;camera_front&quot;],
+  &quot;duration_sec&quot;: 0.2
+}
+</code></pre>
+<p>Camera sensor CSVs require <code>timestamp,path,width,height</code>. <code>filename</code> is also accepted as an
+alias for <code>path</code> if <code>path</code> is not present:</p>
+<pre><code class="language-csv">timestamp,path,width,height
+0.0,images/000001.jpg,1280,720
+</code></pre>
+<h2 id="adapter-expectations">Adapter Expectations</h2>
+<p>Deep validation works best on the native DatasetLint folder format. MCAP, ROS
+bag, Waymo, NuScenes, KITTI, COCO, and Hugging Face inputs are currently
+index-level or manifest-level unless optional parsers are implemented later.</p>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../checks/" class="btn btn-neutral float-right" title="Checks">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+        <span>
+          <a href="https://github.com/gagandeepreehal/datasetlint" class="fa fa-github" style="color: #fcfcfc"> GitHub</a>
+        </span>
+    
+    
+      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../checks/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "..";</script>
+    <script src="../js/theme_extra.js"></script>
+    <script src="../js/theme.js"></script>
+      <script src="../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

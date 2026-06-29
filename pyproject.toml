@@ -38,6 +38,13 @@ dev = [
   "ruff>=0.4",
   "mypy>=1.8",
 ]
+docs = [
+  "mkdocs>=1.5",
+]
+release = [
+  "build>=1",
+  "twine>=5",
+]
 
 [project.scripts]
 datasetlint = "datasetlint.cli:app"

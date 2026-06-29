@@ -2,6 +2,9 @@
 
 `datasetlint stats` computes dataset distributions in addition to pass/fail validation.
 
+Commands using `examples/...` assume a source checkout. For wheel-only installs,
+replace them with paths to local datasets.
+
 ```bash
 datasetlint stats examples/minimal_dataset
 datasetlint stats examples/minimal_dataset --format json

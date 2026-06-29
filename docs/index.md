@@ -16,6 +16,10 @@ Core docs:
 
 - [Quickstart](quickstart.md)
 - [Checks](checks.md)
+- [Reports](reports.md)
 - [Stats](stats.md)
 - [Diff](diff.md)
 - [Adapters](adapters.md)
+- [CI Templates](ci.md)
+- [Architecture](architecture.md)
+- [Release Checklist](release-checklist.md)

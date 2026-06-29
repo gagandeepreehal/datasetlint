@@ -7,13 +7,30 @@ from typing import Any
 
 import pandas as pd
 
-from datasetlint.adapters.base import DatasetAdapter, DatasetMetadata, SensorInfo
+from datasetlint.adapters.base import AdapterCoverage, DatasetAdapter, DatasetMetadata, SensorInfo
 
 
 class WaymoAdapter(DatasetAdapter):
     """Detect Waymo Open Dataset TFRecord files without TensorFlow."""
 
     name = "waymo"
+
+    def coverage(self) -> AdapterCoverage:
+        return AdapterCoverage(
+            validation_mode="index-level",
+            checked=["Waymo TFRecord file extension", "file presence"],
+            not_checked=[
+                "TFRecord parsing",
+                "Waymo frame protos",
+                "sensor timestamps",
+                "calibration",
+                "labels",
+                "trajectories",
+            ],
+            limitations=[
+                "Waymo deep parsing is not implemented and TensorFlow is not a runtime dependency."
+            ],
+        )
 
     def can_load(self, path: str | Path) -> bool:
         dataset_path = Path(path)

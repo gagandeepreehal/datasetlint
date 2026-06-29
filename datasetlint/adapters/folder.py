@@ -7,7 +7,7 @@ from typing import Any
 
 import pandas as pd
 
-from datasetlint.adapters.base import DatasetAdapter, DatasetMetadata, SensorInfo
+from datasetlint.adapters.base import AdapterCoverage, DatasetAdapter, DatasetMetadata, SensorInfo
 from datasetlint.io.csv import read_csv
 from datasetlint.io.filesystem import stemmed_csv_files
 from datasetlint.io.json import read_json
@@ -17,6 +17,31 @@ class FolderAdapter(DatasetAdapter):
     """Load the native folder-based DatasetLint layout."""
 
     name = "folder"
+
+    def coverage(self) -> AdapterCoverage:
+        return AdapterCoverage(
+            validation_mode="deep",
+            checked=[
+                "native DatasetLint folder layout",
+                "metadata schema",
+                "required files",
+                "CSV parseability",
+                "broken file references",
+                "timestamps and timestamp gaps",
+                "sensor synchronization",
+                "calibration and camera intrinsics",
+                "labels and track consistency",
+                "trajectories",
+            ],
+            not_checked=[
+                "image pixel decoding",
+                "point cloud payload decoding",
+                "semantic correctness of labels",
+            ],
+            limitations=[
+                "Deep validation is designed for the native DatasetLint folder format."
+            ],
+        )
 
     def can_load(self, path: str | Path) -> bool:
         dataset_path = Path(path)
