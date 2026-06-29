@@ -21,6 +21,7 @@ from datasetlint.adapters.base import (
     manifest_provenance,
     read_json_list,
     relative_to_root,
+    validation_scope,
 )
 
 TABLES = (
@@ -208,6 +209,7 @@ class NuScenesAdapter(DatasetAdapter):
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
+            **validation_scope(self.name, manifest.limitations),
             errors=errors,
             warnings=warnings,
             coverage={

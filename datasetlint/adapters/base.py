@@ -138,6 +138,10 @@ class AdapterValidationReport(SerializableModel):
     dataset_root: str
     detected: bool
     valid: bool
+    validation_mode: str = "manifest-level"
+    checked: list[str] = Field(default_factory=list)
+    not_checked: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     coverage: dict[str, Any] = Field(default_factory=dict)
@@ -201,6 +205,7 @@ class DatasetAdapter:
             dataset_root=str(root),
             detected=detected,
             valid=not errors,
+            **validation_scope(self.name, manifest.limitations if manifest is not None else []),
             errors=errors,
             warnings=warnings,
             coverage=_coverage_for_manifest(manifest),
@@ -337,6 +342,118 @@ def relative_to_root(root: Path, path: Path) -> str:
         return path.relative_to(base).as_posix()
     except ValueError:
         return path.as_posix()
+
+
+def validation_scope(adapter_name: str, limitations: list[str] | None = None) -> dict[str, Any]:
+    scope = _VALIDATION_SCOPES.get(adapter_name, _VALIDATION_SCOPES["generic"])
+    merged_limitations = [*scope["limitations"], *(limitations or [])]
+    return {
+        "validation_mode": scope["validation_mode"],
+        "checked": list(scope["checked"]),
+        "not_checked": list(scope["not_checked"]),
+        "limitations": _unique_strings(merged_limitations),
+    }
+
+
+def _unique_strings(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for value in values:
+        if value not in seen:
+            unique.append(value)
+            seen.add(value)
+    return unique
+
+
+_VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
+    "folder": {
+        "validation_mode": "manifest-level",
+        "checked": [
+            "native folder manifest extraction",
+            "metadata, sensor, label, trajectory, and calibration file discovery",
+        ],
+        "not_checked": [
+            "deep lint rules; use datasetlint lint or datasetlint DATASET for full native checks"
+        ],
+        "limitations": [
+            "Adapter validation for native folders is manifest-level; lint commands run deep rules."
+        ],
+    },
+    "generic": {
+        "validation_mode": "manifest-level",
+        "checked": ["recursive file index", "media/label/timestamp filename patterns"],
+        "not_checked": ["format-specific schemas", "sensor synchronization", "label geometry"],
+        "limitations": ["Generic folder validation infers structure from filenames and extensions."],
+    },
+    "coco": {
+        "validation_mode": "manifest-level",
+        "checked": [
+            "COCO JSON structure",
+            "image references",
+            "category references",
+            "basic bbox dimensions",
+        ],
+        "not_checked": ["image payload decoding", "robotics calibration", "sensor synchronization"],
+        "limitations": ["COCO validation is manifest-level and does not decode image contents."],
+    },
+    "kitti": {
+        "validation_mode": "manifest-level",
+        "checked": [
+            "KITTI object/odometry layout",
+            "image/lidar file pairing",
+            "label row shape",
+            "calibration file presence",
+            "odometry timestamp monotonicity",
+        ],
+        "not_checked": ["binary point cloud contents", "camera image decoding", "3D geometry realism"],
+        "limitations": ["KITTI validation parses text metadata and indexes binary sensor files."],
+    },
+    "nuscenes": {
+        "validation_mode": "manifest-level",
+        "checked": [
+            "nuScenes metadata tables",
+            "sample/sample_data references",
+            "annotation references",
+            "calibrated sensor references",
+        ],
+        "not_checked": ["sensor payload decoding", "map layers", "full devkit evaluation checks"],
+        "limitations": ["nuScenes validation uses metadata tables and lightweight file checks."],
+    },
+    "waymo": {
+        "validation_mode": "index-level",
+        "checked": ["TFRecord file discovery", "file sizes", "duplicate segment names"],
+        "not_checked": ["frame parsing", "labels", "calibration", "sensor synchronization"],
+        "limitations": ["Waymo validation is index-level unless optional parsers are implemented."],
+    },
+    "rosbag": {
+        "validation_mode": "index-level",
+        "checked": [
+            "ROS bag file discovery",
+            "ROS2 metadata.yaml presence",
+            "empty bag files",
+            "lightweight topic summaries when metadata is available",
+        ],
+        "not_checked": ["message payloads", "topic schemas", "timestamp synchronization"],
+        "limitations": ["ROS bag validation is index-level without optional ROS bag parsers."],
+    },
+    "mcap": {
+        "validation_mode": "index-level",
+        "checked": ["MCAP file discovery", "file sizes", "empty file detection"],
+        "not_checked": ["messages", "channels", "schemas", "timestamp synchronization"],
+        "limitations": ["MCAP validation is index-level unless optional parsers are implemented."],
+    },
+    "huggingface": {
+        "validation_mode": "manifest-level",
+        "checked": ["cache metadata or remote dataset metadata", "split/sample availability"],
+        "not_checked": [
+            "full dataset scan",
+            "robotics calibration",
+            "sensor synchronization",
+            "label geometry",
+        ],
+        "limitations": ["Hugging Face validation samples or indexes dataset metadata."],
+    },
+}
 
 
 def _coverage_for_manifest(manifest: DatasetManifest | None) -> dict[str, Any]:

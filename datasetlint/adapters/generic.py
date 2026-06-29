@@ -20,6 +20,7 @@ from datasetlint.adapters.base import (
     manifest_provenance,
     read_json_object,
     relative_to_root,
+    validation_scope,
 )
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -176,6 +177,7 @@ class GenericFolderAdapter(DatasetAdapter):
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
+            **validation_scope(self.name, manifest.limitations),
             errors=errors,
             warnings=warnings,
             coverage={

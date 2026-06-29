@@ -17,6 +17,7 @@ from datasetlint.adapters.base import (
     SequenceRecord,
     manifest_provenance,
     relative_to_root,
+    validation_scope,
 )
 
 
@@ -107,6 +108,7 @@ class ROSBagAdapter(DatasetAdapter):
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
+            **validation_scope(self.name, manifest.limitations),
             errors=errors,
             warnings=warnings,
             coverage={"sequences": bool(manifest.sequences), "topics": bool(manifest.sensors)},

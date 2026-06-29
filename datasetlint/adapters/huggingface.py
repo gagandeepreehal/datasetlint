@@ -19,6 +19,7 @@ from datasetlint.adapters.base import (
     SequenceRecord,
     manifest_provenance,
     read_json_object,
+    validation_scope,
 )
 
 
@@ -80,6 +81,7 @@ class HuggingFaceAdapter(DatasetAdapter):
                 dataset_root=str(root),
                 detected=self.detect(root),
                 valid=False,
+                **validation_scope(self.name),
                 errors=[str(exc)],
                 warnings=warnings,
                 coverage={},
@@ -96,6 +98,7 @@ class HuggingFaceAdapter(DatasetAdapter):
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
+            **validation_scope(self.name, manifest.limitations),
             errors=errors,
             warnings=warnings,
             coverage={"sequences": bool(manifest.sequences), "sensors": bool(manifest.sensors)},
