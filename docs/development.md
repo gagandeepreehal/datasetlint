@@ -58,6 +58,8 @@ An adapter should implement:
 
 Use `DatasetManifest` and `AdapterValidationReport` from `datasetlint.adapters.base`. Keep optional dependencies out of the base install, and use tiny synthetic fixtures for tests.
 
+When an adapter can decode semantic records, populate the normalized `frames`, `sensors`, `annotations`, `calibration`, and `splits` fields rather than only adapter-specific metadata. `datasetlint.adapters.manifest_rules` runs shared checks over those records and merges the results into `coverage.common_rule_inputs`, `stats.common_rule_stats`, and `checked`.
+
 ## Adding Config
 
 Add fields to `LintConfig` in `datasetlint/schemas.py`, tests for defaults and parsing, and docs in [Configuration](configuration.md). Unknown config keys are intentionally rejected.

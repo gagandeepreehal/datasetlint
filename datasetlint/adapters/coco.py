@@ -21,6 +21,7 @@ from datasetlint.adapters.base import (
     relative_to_root,
     validation_scope,
 )
+from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
 
 class CocoAdapter(DatasetAdapter):
@@ -191,25 +192,36 @@ class CocoAdapter(DatasetAdapter):
                 errors.append(f"Invalid bbox dimensions for annotation {annotation.annotation_id}.")
         if not manifest.metadata.get("categories"):
             errors.append("Empty categories.")
+        scope = validation_scope(self.name, manifest.limitations)
+        coverage = {
+            "frames": bool(manifest.frames),
+            "annotations": bool(manifest.annotations),
+            "categories": bool(manifest.metadata.get("categories")),
+            "splits": bool(manifest.splits),
+        }
+        stats = {
+            "frame_count": len(manifest.frames),
+            "annotation_count": len(manifest.annotations),
+            "category_count": len(manifest.metadata.get("categories", {})),
+        }
+        scope, errors, warnings, coverage, stats = merge_common_rule_result(
+            scope=scope,
+            errors=errors,
+            warnings=warnings,
+            coverage=coverage,
+            stats=stats,
+            result=run_manifest_rules(manifest, root),
+        )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
-            **validation_scope(self.name, manifest.limitations),
+            **scope,
             errors=errors,
             warnings=warnings,
-            coverage={
-                "frames": bool(manifest.frames),
-                "annotations": bool(manifest.annotations),
-                "categories": bool(manifest.metadata.get("categories")),
-                "splits": bool(manifest.splits),
-            },
-            stats={
-                "frame_count": len(manifest.frames),
-                "annotation_count": len(manifest.annotations),
-                "category_count": len(manifest.metadata.get("categories", {})),
-            },
+            coverage=coverage,
+            stats=stats,
         )
 
     def load_metadata(self, path: str | Path) -> DatasetMetadata:

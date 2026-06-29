@@ -22,6 +22,7 @@ from datasetlint.adapters.base import (
     relative_to_root,
     validation_scope,
 )
+from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".mkv"}
@@ -172,27 +173,38 @@ class GenericFolderAdapter(DatasetAdapter):
                 f"Timestamp count mismatch: timestamps.csv has {timestamp_count}, "
                 f"manifest has {len(manifest.frames)} frames."
             )
+        scope = validation_scope(self.name, manifest.limitations)
+        coverage = {
+            "frames": bool(manifest.frames),
+            "sensors": bool(manifest.sensors),
+            "annotations": bool(manifest.annotations),
+            "calibration": bool(manifest.calibration),
+            "splits": bool(manifest.splits),
+        }
+        stats = {
+            "file_count": len(files),
+            "frame_count": len(manifest.frames),
+            "sensor_count": len(manifest.sensors),
+            "annotation_count": len(manifest.annotations),
+        }
+        scope, errors, warnings, coverage, stats = merge_common_rule_result(
+            scope=scope,
+            errors=errors,
+            warnings=warnings,
+            coverage=coverage,
+            stats=stats,
+            result=run_manifest_rules(manifest, root),
+        )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
-            **validation_scope(self.name, manifest.limitations),
+            **scope,
             errors=errors,
             warnings=warnings,
-            coverage={
-                "frames": bool(manifest.frames),
-                "sensors": bool(manifest.sensors),
-                "annotations": bool(manifest.annotations),
-                "calibration": bool(manifest.calibration),
-                "splits": bool(manifest.splits),
-            },
-            stats={
-                "file_count": len(files),
-                "frame_count": len(manifest.frames),
-                "sensor_count": len(manifest.sensors),
-                "annotation_count": len(manifest.annotations),
-            },
+            coverage=coverage,
+            stats=stats,
         )
 
     def load_metadata(self, path: str | Path) -> DatasetMetadata:

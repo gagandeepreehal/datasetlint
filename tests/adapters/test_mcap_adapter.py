@@ -65,7 +65,10 @@ def test_mcap_deep_validation_uses_parser_metadata(monkeypatch):
     assert report.validation_mode == "deep"
     assert report.coverage["channels"] is True
     assert report.coverage["message_timestamps"] is True
+    assert report.coverage["common_rule_inputs"]["frames"] is True
+    assert "common timestamp consistency" in report.checked
     assert report.stats["message_count"] == 1
+    assert report.stats["common_rule_stats"]["frame_count"] == 1
 
 
 def test_mcap_deep_parse_failure_is_invalid(monkeypatch):

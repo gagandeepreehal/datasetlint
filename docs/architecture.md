@@ -31,7 +31,7 @@ Adapters for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and H
 - provenance
 - limitations
 
-This layer supports inspection, export, and adapter validation without forcing every source dataset into the native folder format first.
+This layer supports inspection, export, and adapter validation without forcing every source dataset into the native folder format first. Adapter validation also runs a small shared rule layer over decoded manifest records when those records are available.
 
 ## Current Validation Boundary
 
@@ -48,7 +48,11 @@ Today, MCAP, ROS bag, and Waymo default to index-level for the base install, but
 - ROS bag: topics, message types, counts, and timestamps.
 - Waymo: TFRecord frames, sensors, labels, and calibration metadata.
 
-COCO, KITTI, nuScenes, Hugging Face, and generic folder adapters are manifest-level. Deep common-rule validation still remains the native folder path until common rules can run over normalized manifests.
+COCO, KITTI, nuScenes, Hugging Face, and generic folder adapters are manifest-level. Their validation reports run the shared manifest-rule layer over normalized records when the adapter has decoded enough data for a rule.
+
+Adapter reports now include `coverage.common_rule_inputs` and `stats.common_rule_stats` for the shared manifest-rule layer. These common rules currently check decoded record references, duplicate and non-monotonic timestamps, large timestamp gaps, coarse sensor sync gaps, calibration matrix shape, annotation links, and split references. They only run on records the adapter actually decoded. For example, Waymo index-mode placeholder TFRecord records are excluded from common frame/sensor coverage, while Waymo `--deep` frame metadata is included.
+
+This is still not full native-rule parity. The native folder rule engine remains the deepest validation path for label geometry, track behavior, trajectories, and project-specific CSV/JSON checks.
 
 ## Future ValidationContext
 
@@ -62,15 +66,16 @@ A future `ValidationContext` should let common rules operate over either native 
 - trajectories when available
 - source-file provenance
 
-The goal is to reuse checks such as broken references, duplicate timestamps, sensor sync gaps, missing calibration, invalid intrinsics, label geometry, duplicate track IDs, and trajectory speed without duplicating every rule per adapter.
+The goal is to expand the current shared manifest-rule layer into a fuller context that can reuse checks such as broken references, duplicate timestamps, sensor sync gaps, missing calibration, invalid intrinsics, label geometry, duplicate track IDs, and trajectory speed without duplicating every rule per adapter.
 
 ## Migration Plan
 
 1. Keep `lint_dataset()`, `LintReport`, adapter APIs, and CLI commands stable.
-2. Add `ValidationContext` internally beside `DatasetContext`.
-3. Teach one low-risk rule group to consume `ValidationContext` while preserving native folder behavior.
-4. Convert adapter manifests into `ValidationContext` only when the adapter has enough data for that rule group.
-5. Keep `validation_mode`, `checked`, `not_checked`, and `limitations` populated so partial coverage remains visible.
-6. Gradually move common rules over as tests prove parity.
+2. Keep extending the lightweight manifest-rule layer for low-risk checks that only need normalized records.
+3. Add `ValidationContext` internally beside `DatasetContext`.
+4. Teach one native rule group to consume `ValidationContext` while preserving native folder behavior.
+5. Convert adapter manifests into `ValidationContext` only when the adapter has enough data for that rule group.
+6. Keep `validation_mode`, `checked`, `not_checked`, and `limitations` populated so partial coverage remains visible.
+7. Gradually move common rules over as tests prove parity.
 
 This avoids a large refactor while creating a path from manifest inspection toward deeper real-format validation.

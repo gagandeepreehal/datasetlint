@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,7 @@ import pandas as pd
 
 from datasetlint.adapters.base import (
     AdapterValidationReport,
+    AnnotationRecord,
     DatasetAdapter,
     DatasetManifest,
     DatasetMetadata,
@@ -21,6 +23,7 @@ from datasetlint.adapters.base import (
     read_json_object,
     validation_scope,
 )
+from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
 
 class HuggingFaceAdapter(DatasetAdapter):
@@ -93,20 +96,31 @@ class HuggingFaceAdapter(DatasetAdapter):
             errors.append("Empty dataset or no split metadata available.")
         if not manifest.sensors:
             warnings.append("Unsupported or unknown feature types; no media/text streams inferred.")
+        scope = validation_scope(self.name, manifest.limitations)
+        coverage = {"sequences": bool(manifest.sequences), "sensors": bool(manifest.sensors)}
+        stats = {
+            "sequence_count": len(manifest.sequences),
+            "frame_count": len(manifest.frames),
+            "sensor_count": len(manifest.sensors),
+        }
+        scope, errors, warnings, coverage, stats = merge_common_rule_result(
+            scope=scope,
+            errors=errors,
+            warnings=warnings,
+            coverage=coverage,
+            stats=stats,
+            result=run_manifest_rules(manifest, root),
+        )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
-            **validation_scope(self.name, manifest.limitations),
+            **scope,
             errors=errors,
             warnings=warnings,
-            coverage={"sequences": bool(manifest.sequences), "sensors": bool(manifest.sensors)},
-            stats={
-                "sequence_count": len(manifest.sequences),
-                "frame_count": len(manifest.frames),
-                "sensor_count": len(manifest.sensors),
-            },
+            coverage=coverage,
+            stats=stats,
         )
 
     def load_metadata(self, path: str | Path) -> DatasetMetadata:
@@ -200,16 +214,26 @@ class HuggingFaceAdapter(DatasetAdapter):
         features = getattr(loaded, "features", {}) or {}
         row_count = 0
         frames: list[FrameRecord] = []
+        annotations: list[AnnotationRecord] = []
         for row_count, row in enumerate(
             loaded.take(max_rows)
             if streaming
             else loaded.select(range(min(len(loaded), max_rows or len(loaded))))
         ):
+            frame_id = str(row_count)
             frames.append(
                 FrameRecord(
-                    frame_id=str(row_count),
+                    frame_id=frame_id,
                     sequence_id=str(split or "default"),
+                    sensor_id=_primary_sensor_from_row(row, features),
                     metadata=_row_summary(row),
+                )
+            )
+            annotations.extend(
+                _annotations_from_row(
+                    row,
+                    frame_id=frame_id,
+                    sequence_id=str(split or "default"),
                 )
             )
         sensors = _sensors_from_features(features, len(frames))
@@ -226,7 +250,7 @@ class HuggingFaceAdapter(DatasetAdapter):
             ],
             frames=frames,
             sensors=sensors,
-            annotations=[],
+            annotations=annotations,
             calibration=[],
             splits={str(split): [frame.frame_id for frame in frames]} if split else {},
             metadata={"features": {str(key): str(value) for key, value in dict(features).items()}},
@@ -288,7 +312,67 @@ def _feature_type(name: str, feature_text: str) -> str:
     return "unknown"
 
 
+def _primary_sensor_from_row(row: object, features: object) -> str | None:
+    feature_map = dict(features) if isinstance(features, Mapping) else {}
+    if isinstance(row, dict):
+        for key in row:
+            if _feature_type(str(key), str(feature_map.get(key, "")).lower()) in {
+                "camera",
+                "video",
+                "audio",
+                "language",
+            }:
+                return str(key)
+        for key in feature_map:
+            if _feature_type(str(key), str(feature_map.get(key, "")).lower()) in {
+                "camera",
+                "video",
+                "audio",
+                "language",
+            }:
+                return str(key)
+    return None
+
+
+def _annotations_from_row(
+    row: object, *, frame_id: str, sequence_id: str | None
+) -> list[AnnotationRecord]:
+    if not isinstance(row, dict):
+        return []
+    annotations: list[AnnotationRecord] = []
+    for key, value in row.items():
+        lowered = str(key).lower()
+        if "bbox" in lowered or "box" in lowered:
+            annotations.append(
+                AnnotationRecord(
+                    annotation_id=f"{frame_id}:{key}",
+                    frame_id=frame_id,
+                    sequence_id=sequence_id,
+                    annotation_type="bbox",
+                    values={"column": str(key), "value_type": type(value).__name__},
+                    metadata={"source": "huggingface_row"},
+                )
+            )
+        elif "label" in lowered or "class" in lowered:
+            annotations.append(
+                AnnotationRecord(
+                    annotation_id=f"{frame_id}:{key}",
+                    frame_id=frame_id,
+                    sequence_id=sequence_id,
+                    category=str(value) if _scalar(value) else None,
+                    annotation_type="label",
+                    values={"column": str(key), "value_type": type(value).__name__},
+                    metadata={"source": "huggingface_row"},
+                )
+            )
+    return annotations
+
+
 def _row_summary(row: object) -> dict[str, Any]:
     if not isinstance(row, dict):
         return {"type": type(row).__name__}
     return {str(key): type(value).__name__ for key, value in row.items()}
+
+
+def _scalar(value: object) -> bool:
+    return isinstance(value, str | int | float | bool) or value is None

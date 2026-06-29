@@ -90,6 +90,7 @@ DatasetLint v0.1 supports deep rule validation for the native folder dataset for
 - dataset statistics and folder-to-folder diffs
 - normalized adapter manifests for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets
 - adapter validation, inspection, discovery, and manifest export commands
+- shared manifest-rule summaries for decoded adapter records, including frame references, timestamp consistency, sensor links, calibration shape, annotation links, and split references where the adapter exposes those records
 
 ## Installation
 
@@ -377,7 +378,7 @@ More CI templates, including report artifacts and dataset diffs, are in [docs/ci
 | Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata |
 | ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
 | MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
-| Hugging Face | `huggingface` | supported | `datasets` | Cache metadata indexing plus guarded remote sampling |
+| Hugging Face | `huggingface` | supported | `datasets` | Cache metadata indexing plus guarded remote sampling; sampled label/bbox-like rows feed common annotation inputs |
 | Custom adapters | subclass `DatasetAdapter` | experimental | adapter-specific | Implement `detect`, `load`, and `validate`, then register the adapter |
 
 ## Roadmap
@@ -391,7 +392,7 @@ Near term:
 
 Medium term:
 
-- deeper semantic decoding from MCAP, ROS bag, and Waymo payloads
+- modality-specific decoding from MCAP and ROS bag message payloads, Waymo image/lidar payloads, and richer Hugging Face row schemas
 - conversion helpers from normalized manifests to the native lintable folder format
 - richer sensor synchronization checks
 - richer static HTML report styling while keeping reports dependency-free

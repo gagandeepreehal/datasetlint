@@ -155,9 +155,15 @@ class FolderAdapter(DatasetAdapter):
         labels = self.load_labels(dataset_path)
         if labels is not None:
             for index, row in labels.iterrows():
+                track_id = row.get("track_id")
+                annotation_id = (
+                    f"{track_id}-{int(index)}"
+                    if track_id is not None
+                    else f"label-{int(index)}"
+                )
                 annotations.append(
                     AnnotationRecord(
-                        annotation_id=str(row.get("track_id", f"label-{index}")),
+                        annotation_id=str(annotation_id),
                         frame_id=str(row.get("frame_id"))
                         if row.get("frame_id") is not None
                         else None,

@@ -16,6 +16,16 @@ def test_nuscenes_adapter_loads_metadata_tables():
     assert {sensor.sensor_type for sensor in manifest.sensors} == {"camera", "lidar"}
 
 
+def test_nuscenes_validation_runs_common_manifest_rules():
+    report = NuScenesAdapter().validate(FIXTURES / "nuscenes_mini_like")
+
+    assert report.valid is True
+    assert report.coverage["common_rule_inputs"]["frames"] is True
+    assert report.coverage["common_rule_inputs"]["calibration"] is True
+    assert "common sensor sync summary" in report.checked
+    assert report.stats["common_rule_stats"]["frame_count"] == 2
+
+
 def test_nuscenes_validation_catches_missing_sample_data_file(tmp_path):
     source = FIXTURES / "nuscenes_mini_like" / "v1.0-mini"
     target = tmp_path / "v1.0-mini"
