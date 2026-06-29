@@ -15,7 +15,7 @@ Documentation: [DatasetLint docs](https://gagandeepreehal.github.io/datasetlint/
 
 - Deep validation works best on the native DatasetLint folder format.
 - Adapters provide manifest inspection, manifest export, and adapter validation for external formats.
-- MCAP, ROS bag, and Waymo default to lightweight index mode; install the matching extra and pass `--deep` to parse channel/topic/frame metadata.
+- MCAP, ROS bag, and Waymo default to lightweight index mode; install the matching extra and pass `--deep` to parse channel/topic/frame metadata. If a requested deep parser cannot parse the input, validation fails instead of reporting a valid deep pass.
 - Hugging Face validation uses cache metadata or guarded sampling rather than scanning entire remote datasets by default.
 - DatasetLint is not a dataset management platform, model evaluation framework, simulator, replay tool, or data host.
 - Large-dataset performance has not been benchmarked yet.
@@ -91,6 +91,7 @@ DatasetLint v0.1 supports deep rule validation for the native folder dataset for
 - normalized adapter manifests for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets
 - adapter validation, inspection, discovery, and manifest export commands
 - shared manifest-rule summaries for decoded adapter records, including frame references, timestamp consistency, sensor links, calibration shape, annotation links, and split references where the adapter exposes those records
+- single-file adapter roots such as `.bag`, `.mcap`, and `.tfrecord` resolve relative frame/file records from the containing directory
 
 ## Installation
 
@@ -233,7 +234,7 @@ datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.js
 Exit codes:
 
 - `0`: command completed and did not meet the configured failure threshold
-- `1`: validation failed the `--fail-on` threshold, or diff regressions were found with `--fail-on-regression`
+- `1`: validation failed the `--fail-on` threshold, adapter validation failed, or diff regressions were found with `--fail-on-regression`
 - `2`: invalid usage, unknown check group, bad adapter, or invalid config
 
 ## Python API Usage
@@ -375,10 +376,10 @@ More CI templates, including report artifacts and dataset diffs, are in [docs/ci
 | COCO | `coco` | supported | none | Direct JSON parser for images, categories, bbox, and segmentation references |
 | KITTI | `kitti` | supported | none | Object and odometry layouts with camera, lidar, labels, calibration, and timestamps |
 | nuScenes | `nuscenes` | supported | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit |
-| Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata |
+| Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata, not image/lidar payload bytes |
 | ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
 | MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
-| Hugging Face | `huggingface` | supported | `datasets` | Cache metadata indexing plus guarded remote sampling; sampled label/bbox-like rows feed common annotation inputs |
+| Hugging Face | `huggingface` | supported | `datasets` | Cache/local metadata works without the extra; guarded remote sampling needs `datasets`; sampled label/bbox-like rows feed common annotation inputs |
 | Custom adapters | subclass `DatasetAdapter` | experimental | adapter-specific | Implement `detect`, `load`, and `validate`, then register the adapter |
 
 ## Roadmap
@@ -392,7 +393,7 @@ Near term:
 
 Medium term:
 
-- modality-specific decoding from MCAP and ROS bag message payloads, Waymo image/lidar payloads, and richer Hugging Face row schemas
+- modality-specific decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payloads, richer nuScenes payload semantics, and richer Hugging Face row schemas
 - conversion helpers from normalized manifests to the native lintable folder format
 - richer sensor synchronization checks
 - richer static HTML report styling while keeping reports dependency-free

@@ -121,7 +121,9 @@ Validation output includes `coverage.common_rule_inputs` and
 checks.
 Use `--deep` with MCAP, ROS bag, or Waymo after installing the matching extra
 when you want parser-backed channel/topic/frame metadata instead of only file
-indexing.
+indexing. If the requested deep parser is present but cannot parse the input,
+validation reports `valid: false` and exits with code `1`; parser warnings are
+not treated as successful deep validation.
 
 ## Export Manifest
 

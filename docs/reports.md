@@ -27,7 +27,7 @@ datasetlint examples/bad_dataset --format html > report.html
 datasetlint report examples/bad_dataset --out report.html
 ```
 
-The HTML report is plain static HTML with no frontend build step. It includes the dataset path, pass/fail state, issue counts by severity, checks run, adapter name and mode, dataset fingerprint, config summary, dataset summary, stats when available, and an issue table with severity, check, file, row, message, and metadata.
+The HTML report is plain static HTML with no frontend build step. It includes the dataset path, pass/fail state, issue counts by severity, checks run, adapter name and mode, dataset fingerprint, config summary, dataset summary, stats when available, and an issue table with severity, check, file, row, message, and metadata. HTML output intentionally omits `generated_at` so repeated runs over the same inputs produce stable HTML. JSON and Markdown reports still include `generated_at`.
 
 Committed sample reports:
 
@@ -51,6 +51,8 @@ Python validation returns `LintReport`:
 - `findings`
 - `stats`
 - `passed`
+
+Static HTML renders the same report data except for `generated_at`, which is omitted for deterministic output.
 
 Each issue includes:
 
