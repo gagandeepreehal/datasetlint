@@ -43,8 +43,10 @@ python -m pip install -e ".[all-adapters]"
 ```
 
 The base install can still inspect COCO, KITTI, generic folders, nuScenes
-metadata tables, and index-only Waymo, ROS bag, and MCAP datasets without those
-heavy optional packages.
+metadata tables, and index-mode Waymo, ROS bag, and MCAP datasets without those
+heavy optional packages. Install the matching extra and use `--deep` when you
+want parser-backed MCAP channel/schema/timestamp metadata, ROS bag
+topic/message metadata, or Waymo frame/label/calibration metadata.
 
 ## Package Install Status
 

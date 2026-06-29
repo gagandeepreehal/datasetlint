@@ -5,6 +5,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+import datasetlint.adapters.mcap as mcap_module
 from datasetlint.cli import app
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -56,6 +57,62 @@ def test_cli_validate_works():
     assert result.exit_code == 0
     payload = json.loads(result.stdout)
     assert payload["valid"] is True
+    assert payload["validation_mode"] == "manifest-level"
+    assert payload["checked"]
+    assert payload["not_checked"]
+    assert payload["limitations"]
+
+
+def test_cli_validate_deep_adapter_mode(monkeypatch):
+    def fake_parse(dataset_root: Path, files: list[Path], *, max_messages: int):
+        assert max_messages == 2
+        return mcap_module._ParsedMCAP(
+            sequences=[mcap_module.SequenceRecord(sequence_id="log", name="log.mcap")],
+            frames=[
+                mcap_module.FrameRecord(
+                    frame_id="log:0",
+                    sequence_id="log",
+                    timestamp=1.0,
+                    sensor_id="/imu",
+                )
+            ],
+            sensors=[
+                mcap_module.SensorStream(
+                    sensor_id="/imu",
+                    sensor_type="imu",
+                    frame_count=1,
+                )
+            ],
+            metadata={
+                "parse_mode": "deep",
+                "message_count": 1,
+                "channels": [{"topic": "/imu"}],
+                "schemas": [{"name": "sensor_msgs/Imu"}],
+            },
+            limitations=["payloads not decoded"],
+        )
+
+    monkeypatch.setattr(mcap_module, "_parse_mcap_files", fake_parse)
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "validate",
+            str(FIXTURES / "mcap_index_only"),
+            "--adapter",
+            "mcap",
+            "--deep",
+            "--max-rows",
+            "2",
+            "--format",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["validation_mode"] == "deep"
+    assert payload["coverage"]["message_timestamps"] is True
 
 
 def test_cli_validate_json_exits_nonzero_when_invalid(tmp_path):
@@ -98,6 +155,10 @@ def test_cli_validate_markdown_exits_nonzero_when_invalid(tmp_path):
 
     assert result.exit_code == 1
     assert "- valid: `False`" in result.stdout
+    assert "- validation_mode: `manifest-level`" in result.stdout
+    assert "- checked:" in result.stdout
+    assert "- not_checked:" in result.stdout
+    assert "- limitations:" in result.stdout
     assert "Missing image file" in result.stdout
 
 

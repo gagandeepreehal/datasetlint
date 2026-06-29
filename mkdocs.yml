@@ -20,9 +20,11 @@ nav:
   - Checks: checks.md
   - Configuration: configuration.md
   - Reports: reports.md
+  - CI Templates: ci.md
   - Stats: stats.md
   - Diff: diff.md
   - Adapters: adapters.md
+  - Architecture: architecture.md
   - Development: development.md
   - Roadmap: roadmap.md
   - Release: release.md

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import datasetlint.adapters.mcap as mcap_module
 from datasetlint.adapters.mcap import MCAPAdapter
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
@@ -20,3 +21,78 @@ def test_mcap_validation_warns_for_empty_file(tmp_path):
     report = MCAPAdapter().validate(tmp_path)
 
     assert any("empty MCAP" in warning for warning in report.warnings)
+
+
+def test_mcap_deep_validation_uses_parser_metadata(monkeypatch):
+    def fake_parse(dataset_root: Path, files: list[Path], *, max_messages: int):
+        assert max_messages == 5
+        return mcap_module._ParsedMCAP(
+            sequences=[
+                mcap_module.SequenceRecord(
+                    sequence_id="log",
+                    name="log.mcap",
+                    frame_count=1,
+                )
+            ],
+            frames=[
+                mcap_module.FrameRecord(
+                    frame_id="log:0",
+                    sequence_id="log",
+                    timestamp=1.0,
+                    sensor_id="/camera/image",
+                )
+            ],
+            sensors=[
+                mcap_module.SensorStream(
+                    sensor_id="/camera/image",
+                    sensor_type="camera",
+                    frame_count=1,
+                )
+            ],
+            metadata={
+                "parse_mode": "deep",
+                "message_count": 1,
+                "channels": [{"id": 1, "topic": "/camera/image"}],
+                "schemas": [{"id": 1, "name": "sensor_msgs/Image"}],
+            },
+            limitations=["payloads not decoded"],
+        )
+
+    monkeypatch.setattr(mcap_module, "_parse_mcap_files", fake_parse)
+
+    report = MCAPAdapter().validate(FIXTURES / "mcap_index_only", deep=True, max_rows=5)
+
+    assert report.validation_mode == "deep"
+    assert report.coverage["channels"] is True
+    assert report.coverage["message_timestamps"] is True
+    assert report.stats["message_count"] == 1
+
+
+def test_mcap_deep_parse_failure_is_invalid(monkeypatch):
+    def fake_parse(dataset_root: Path, files: list[Path], *, max_messages: int):
+        return mcap_module._ParsedMCAP(
+            sequences=[
+                mcap_module.SequenceRecord(
+                    sequence_id="log",
+                    name="log.mcap",
+                    frame_count=0,
+                )
+            ],
+            frames=[],
+            sensors=[],
+            metadata={
+                "parse_mode": "deep",
+                "message_count": 0,
+                "channels": [],
+                "schemas": [],
+            },
+            warnings=["Could not parse log.mcap: not a valid MCAP file."],
+            limitations=["payloads not decoded"],
+        )
+
+    monkeypatch.setattr(mcap_module, "_parse_mcap_files", fake_parse)
+
+    report = MCAPAdapter().validate(FIXTURES / "mcap_index_only", deep=True)
+
+    assert report.valid is False
+    assert "Could not parse log.mcap" in report.errors[0]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from datasetlint.adapters import get_adapter
+from datasetlint.adapters import AdapterDependencyError, get_adapter
 from tests.conftest import write_good_dataset
 
 
@@ -34,5 +34,5 @@ def test_partial_adapter_raises_clear_not_implemented(tmp_path):
     adapter = get_adapter(mcap_path, "auto")
 
     assert adapter.name == "mcap"
-    with pytest.raises(NotImplementedError, match="MCAP deep parsing"):
+    with pytest.raises(AdapterDependencyError, match="Deep MCAP parsing requires"):
         adapter.load_timestamps(mcap_path, "camera_front")

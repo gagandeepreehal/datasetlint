@@ -14,6 +14,7 @@ from rich.table import Table
 from datasetlint._version import __version__
 from datasetlint.adapters import (
     AdapterError,
+    AdapterValidationReport,
     DatasetManifest,
     detect_adapter,
     detect_adapters,
@@ -24,7 +25,7 @@ from datasetlint.adapters import (
 from datasetlint.core import lint_dataset, validate_checks
 from datasetlint.diff import DatasetDiffReport, compare_datasets
 from datasetlint.formatters.console import print_report
-from datasetlint.report import should_fail
+from datasetlint.report import LintReport, should_fail
 from datasetlint.stats import DatasetStats, compute_dataset_stats
 
 app = typer.Typer(add_completion=False, help="Validate robotics and Physical AI datasets.")
@@ -34,6 +35,7 @@ class OutputFormat(str, Enum):
     console = "console"
     json = "json"
     markdown = "markdown"
+    html = "html"
 
 
 class FailLevel(str, Enum):
@@ -88,6 +90,16 @@ def main(
         bool,
         typer.Option("--streaming", help="Use streaming mode when supported by the adapter."),
     ] = False,
+    deep: Annotated[
+        bool,
+        typer.Option(
+            "--deep",
+            help=(
+                "Use optional parser-backed validation for MCAP, ROS bag, and Waymo "
+                "when dependencies are installed."
+            ),
+        ),
+    ] = False,
     max_rows: Annotated[
         int | None,
         typer.Option("--max-rows", help="Maximum rows to inspect for sampling adapters."),
@@ -98,7 +110,7 @@ def main(
     ] = None,
     out: Annotated[
         Path | None,
-        typer.Option("--out", help="Write a JSON report to this path for report command."),
+        typer.Option("--out", help="Write report output for report command."),
     ] = None,
     version: Annotated[
         bool | None,
@@ -139,13 +151,17 @@ def main(
         _run_adapters(args[1:], format)
         return
     if command == "inspect":
-        _run_inspect(args[1:], adapter, auto_detect, split, streaming, max_rows, format)
+        _run_inspect(args[1:], adapter, auto_detect, split, streaming, deep, max_rows, format)
         return
     if command == "validate":
-        _run_adapter_validate(args[1:], adapter, auto_detect, split, streaming, max_rows, format)
+        _run_adapter_validate(
+            args[1:], adapter, auto_detect, split, streaming, deep, max_rows, format
+        )
         return
     if command == "export-manifest":
-        _run_export_manifest(args[1:], adapter, auto_detect, split, streaming, max_rows, output)
+        _run_export_manifest(
+            args[1:], adapter, auto_detect, split, streaming, deep, max_rows, output
+        )
         return
 
     if len(args) != 1:
@@ -171,12 +187,7 @@ def _run_lint(
         report = lint_dataset(path=Path(args[0]), config=config, checks=checks, adapter=adapter)
     except ValueError as exc:
         _usage_error(str(exc))
-    if format is OutputFormat.json:
-        typer.echo(report.to_json())
-    elif format is OutputFormat.markdown:
-        typer.echo(report.to_markdown())
-    else:
-        print_report(report)
+    _emit_lint_report(report, format)
     if should_fail(report, fail_on.value):
         raise typer.Exit(1)
 
@@ -192,7 +203,7 @@ def _run_report(
     if len(args) != 1:
         _usage_error("report expects one dataset path.")
     if out is None:
-        _usage_error("report requires --out REPORT.json.")
+        _usage_error("report requires --out REPORT.{json,md,html}.")
     try:
         validate_checks(checks)
     except ValueError as exc:
@@ -201,19 +212,41 @@ def _run_report(
         report = lint_dataset(path=Path(args[0]), config=config, checks=checks, adapter=adapter)
     except ValueError as exc:
         _usage_error(str(exc))
+    suffix = out.suffix.lower()
+    if suffix == ".html":
+        content = report.to_html()
+    elif suffix == ".json":
+        content = report.to_json() + "\n"
+    elif suffix in {".md", ".markdown"}:
+        content = report.to_markdown()
+    else:
+        _usage_error("report --out supports .html, .json, .md, and .markdown files.")
     try:
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(report.to_json() + "\n", encoding="utf-8")
+        out.write_text(content, encoding="utf-8")
     except OSError as exc:
         _usage_error(f"Could not write report to {out}: {exc}.")
-    typer.echo(f"Wrote JSON report to {out}")
+    typer.echo(f"Wrote report to {out}")
     if should_fail(report, fail_on.value):
         raise typer.Exit(1)
+
+
+def _emit_lint_report(report: LintReport, format: OutputFormat) -> None:
+    if format is OutputFormat.json:
+        typer.echo(report.to_json())
+    elif format is OutputFormat.markdown:
+        typer.echo(report.to_markdown())
+    elif format is OutputFormat.html:
+        typer.echo(report.to_html())
+    else:
+        print_report(report)
 
 
 def _run_stats(args: list[str], config: Path | None, format: OutputFormat) -> None:
     if len(args) != 1:
         _usage_error("stats expects one dataset path.")
+    if format is OutputFormat.html:
+        _usage_error("stats does not support --format html.")
     try:
         stats = compute_dataset_stats(Path(args[0]), config=config)
     except ValueError as exc:
@@ -234,6 +267,8 @@ def _run_diff(
 ) -> None:
     if len(args) != 2:
         _usage_error("diff expects OLD_DATASET and NEW_DATASET paths.")
+    if format is OutputFormat.html:
+        _usage_error("diff does not support --format html.")
     try:
         report = compare_datasets(Path(args[0]), Path(args[1]), config=config)
     except ValueError as exc:
@@ -249,6 +284,8 @@ def _run_diff(
 
 
 def _run_adapters(args: list[str], format: OutputFormat) -> None:
+    if format is OutputFormat.html:
+        _usage_error("adapters does not support --format html.")
     if len(args) == 1 and args[0] == "list":
         _print_adapter_list(format)
         return
@@ -361,11 +398,14 @@ def _run_inspect(
     auto_detect: bool,
     split: str | None,
     streaming: bool,
+    deep: bool,
     max_rows: int | None,
     format: OutputFormat,
 ) -> None:
     if len(args) != 1:
         _usage_error("inspect expects one dataset path.")
+    if format is OutputFormat.html:
+        _usage_error("inspect does not support --format html.")
     adapter_name = None if auto_detect or adapter == "auto" else adapter
     try:
         manifest = load_dataset(
@@ -373,6 +413,7 @@ def _run_inspect(
             adapter=adapter_name,
             split=split,
             streaming=streaming,
+            deep=deep,
             max_rows=max_rows,
         )
     except AdapterError as exc:
@@ -402,11 +443,14 @@ def _run_adapter_validate(
     auto_detect: bool,
     split: str | None,
     streaming: bool,
+    deep: bool,
     max_rows: int | None,
     format: OutputFormat,
 ) -> None:
     if len(args) != 1:
         _usage_error("validate expects one dataset path.")
+    if format is OutputFormat.html:
+        _usage_error("validate does not support --format html.")
     adapter_name = None if auto_detect or adapter == "auto" else adapter
     try:
         report = validate_dataset(
@@ -414,6 +458,7 @@ def _run_adapter_validate(
             adapter=adapter_name,
             split=split,
             streaming=streaming,
+            deep=deep,
             max_rows=max_rows,
         )
     except AdapterError as exc:
@@ -424,20 +469,7 @@ def _run_adapter_validate(
             raise typer.Exit(1)
         return
     if format is OutputFormat.markdown:
-        lines = [
-            "# DatasetLint Adapter Validation",
-            "",
-            f"- adapter: `{report.adapter_name}`",
-            f"- valid: `{report.valid}`",
-            f"- detected: `{report.detected}`",
-            f"- stats: `{report.stats}`",
-            f"- coverage: `{report.coverage}`",
-        ]
-        if report.errors:
-            lines.append(f"- errors: {', '.join(report.errors)}")
-        if report.warnings:
-            lines.append(f"- warnings: {', '.join(report.warnings)}")
-        typer.echo("\n".join(lines) + "\n")
+        typer.echo(_adapter_validation_markdown(report))
         if not report.valid:
             raise typer.Exit(1)
         return
@@ -450,6 +482,10 @@ def _run_adapter_validate(
         console.print(f"Error: {error}")
     for warning in report.warnings:
         console.print(f"Warning: {warning}")
+    console.print(f"validation_mode={report.validation_mode}")
+    console.print(f"checked={report.checked}")
+    console.print(f"not_checked={report.not_checked}")
+    console.print(f"limitations={report.limitations}")
     console.print(f"coverage={report.coverage}")
     console.print(f"stats={report.stats}")
     if not report.valid:
@@ -462,6 +498,7 @@ def _run_export_manifest(
     auto_detect: bool,
     split: str | None,
     streaming: bool,
+    deep: bool,
     max_rows: int | None,
     output: Path | None,
 ) -> None:
@@ -476,6 +513,7 @@ def _run_export_manifest(
             adapter=adapter_name,
             split=split,
             streaming=streaming,
+            deep=deep,
             max_rows=max_rows,
         )
     except AdapterError as exc:
@@ -507,6 +545,28 @@ def _manifest_markdown(manifest: DatasetManifest) -> str:
         f"- splits: `{manifest_dict['splits']}`\n"
         f"- limitations: `{manifest_dict['limitations']}`\n"
     )
+
+
+def _adapter_validation_markdown(report: AdapterValidationReport) -> str:
+    report_dict = report.to_dict()
+    lines = [
+        "# DatasetLint Adapter Validation",
+        "",
+        f"- adapter: `{report_dict['adapter_name']}`",
+        f"- valid: `{report_dict['valid']}`",
+        f"- detected: `{report_dict['detected']}`",
+        f"- validation_mode: `{report_dict['validation_mode']}`",
+        f"- checked: `{report_dict['checked']}`",
+        f"- not_checked: `{report_dict['not_checked']}`",
+        f"- limitations: `{report_dict['limitations']}`",
+        f"- stats: `{report_dict['stats']}`",
+        f"- coverage: `{report_dict['coverage']}`",
+    ]
+    if report_dict["errors"]:
+        lines.append(f"- errors: {', '.join(report_dict['errors'])}")
+    if report_dict["warnings"]:
+        lines.append(f"- warnings: {', '.join(report_dict['warnings'])}")
+    return "\n".join(lines) + "\n"
 
 
 def _print_stats(stats: DatasetStats) -> None:

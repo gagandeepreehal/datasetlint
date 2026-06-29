@@ -13,12 +13,10 @@ This roadmap separates planned work from implemented behavior. Do not treat thes
 
 ## Medium Term
 
-- Optional deep MCAP channel, schema, compression, and message inspection.
-- Optional deep ROS bag topic and message parsing.
-- Optional deep Waymo TFRecord frame, label, and calibration parsing.
+- Deeper semantic decoding from MCAP, ROS bag, and Waymo payloads into common rule inputs.
 - Additional dataset adapters such as Argoverse, BDD100K, SemanticKITTI, LeRobot/Open X-Embodiment, and RLDS/TFDS robotics datasets.
 - Richer sensor synchronization checks.
-- Static HTML report output or report UI.
+- Richer static HTML report styling while keeping reports dependency-free.
 - Entry-point plugin discovery for third-party adapters.
 
 ## Long Term

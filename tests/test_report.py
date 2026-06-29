@@ -5,6 +5,7 @@ from pathlib import Path
 
 from datasetlint.core import lint_dataset
 from datasetlint.report import LintReport
+from datasetlint.schemas import make_issue
 from tests.conftest import write_good_dataset
 
 
@@ -53,3 +54,62 @@ def test_dataset_fingerprint_does_not_read_referenced_payloads(tmp_path, monkeyp
     assert report.passed is True
     assert report.dataset_fingerprint is not None
     assert report.dataset_fingerprint.startswith("sha256:")
+
+
+def test_html_report_includes_summary_issue_metadata_and_escapes_values():
+    report = LintReport(
+        dataset_path="dataset/<unsafe>",
+        issues=[
+            make_issue(
+                "check_<name>",
+                "error",
+                "bad <script>alert(1)</script>",
+                file="labels/<bad>.csv",
+                row=3,
+                metadata={"key": "<value>"},
+            )
+        ],
+        stats={"issue_count": 1, "sensor_count": 2},
+        passed=False,
+        dataset_summary={"available_modalities": ["labels"]},
+        checks_run=["check_<name>"],
+        adapter={"name": "folder", "mode": "folder"},
+        config={"timestamp_gap_threshold_sec": 0.5},
+        dataset_fingerprint="sha256:abc",
+    )
+
+    html = report.to_html()
+
+    assert "<title>DatasetLint Report</title>" in html
+    assert "Dataset path" in html
+    assert "Adapter mode" in html
+    assert "Dataset fingerprint" in html
+    assert "Config Summary" in html
+    assert "Dataset Summary" in html
+    assert "Dataset Stats" in html
+    assert "Issues" in html
+    assert "&lt;unsafe&gt;" in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+    assert "&lt;value&gt;" in html
+    assert "<script>alert(1)</script>" not in html
+
+
+def test_html_report_is_stable_across_generated_at_changes():
+    report = LintReport(
+        dataset_path="dataset",
+        issues=[],
+        stats={"issue_count": 0},
+        passed=True,
+        generated_at="2026-01-01T00:00:00+00:00",
+        dataset_summary={"sensor_count": 1},
+        checks_run=["check_required_files"],
+        adapter={"name": "folder", "mode": "folder"},
+        config={"timestamp_gap_threshold_sec": 0.5},
+        dataset_fingerprint="sha256:abc",
+    )
+    later = report.model_copy(update={"generated_at": "2026-01-01T00:00:30+00:00"})
+
+    html = report.to_html()
+
+    assert html == later.to_html()
+    assert "Generated at" not in html

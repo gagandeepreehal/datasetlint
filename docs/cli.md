@@ -25,7 +25,7 @@ Common options:
 
 | Option | Values | Purpose |
 | --- | --- | --- |
-| `--format`, `-f` | `console`, `json`, `markdown` | Select output format |
+| `--format`, `-f` | `console`, `json`, `markdown`, `html` | Select output format |
 | `--fail-on` | `error`, `warning`, `info` | Choose which severity makes the command exit non-zero |
 | `--config` | path | Load config from a specific file |
 | `--checks` | comma-separated groups | Run only selected check groups |
@@ -38,6 +38,7 @@ datasetlint lint examples/minimal_dataset
 datasetlint examples/minimal_dataset
 datasetlint examples/minimal_dataset --checks labels,sync
 datasetlint examples/minimal_dataset --format json
+datasetlint examples/minimal_dataset --format html > report.html
 datasetlint examples/minimal_dataset --fail-on warning
 ```
 
@@ -45,10 +46,12 @@ datasetlint examples/minimal_dataset --fail-on warning
 
 ```bash
 datasetlint report DATASET_PATH --out datasetlint-report.json
+datasetlint report DATASET_PATH --out datasetlint-report.md
+datasetlint report DATASET_PATH --out datasetlint-report.html
 ```
 
-Purpose: write the stable JSON validation report to a file for CI artifacts,
-release evidence, or downstream tooling.
+Purpose: write JSON, Markdown, or static HTML validation reports to files for CI
+artifacts, release evidence, or downstream tooling.
 
 ## Stats
 
@@ -92,6 +95,7 @@ Purpose: list adapter availability or report which adapters detect a dataset pat
 datasetlint inspect DATASET_PATH --adapter coco
 datasetlint inspect DATASET_PATH --auto-detect
 datasetlint inspect hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
+datasetlint inspect DATASET_PATH --adapter waymo --deep --max-rows 1000
 datasetlint inspect DATASET_PATH --format json
 ```
 
@@ -104,19 +108,24 @@ limitations, and warnings.
 ```bash
 datasetlint validate DATASET_PATH --adapter kitti
 datasetlint validate DATASET_PATH --auto-detect
+datasetlint validate DATASET_PATH --adapter mcap --deep
 datasetlint validate hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
 datasetlint validate DATASET_PATH --format json
 ```
 
 Purpose: run adapter-specific validation and return errors, warnings, coverage,
-and stats. This is separate from `datasetlint lint`, which runs the native
-folder rule engine.
+validation mode, checked scope, unchecked scope, limitations, and stats. This is
+separate from `datasetlint lint`, which runs the native folder rule engine.
+Use `--deep` with MCAP, ROS bag, or Waymo after installing the matching extra
+when you want parser-backed channel/topic/frame metadata instead of only file
+indexing.
 
 ## Export Manifest
 
 ```bash
 datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.json
 datasetlint export-manifest DATASET_PATH --auto-detect --output manifest.json
+datasetlint export-manifest DATASET_PATH --adapter rosbag --deep --output manifest.json
 ```
 
 Purpose: write the normalized `DatasetManifest` JSON to a file.
@@ -157,6 +166,8 @@ captured console or Markdown file:
 
 ```bash
 datasetlint report examples/minimal_dataset --out datasetlint-report.json
+datasetlint report examples/minimal_dataset --out datasetlint-report.html
 datasetlint examples/minimal_dataset --format json > datasetlint-report.json
 datasetlint examples/minimal_dataset --format markdown > datasetlint-report.md
+datasetlint examples/minimal_dataset --format html > datasetlint-report.html
 ```

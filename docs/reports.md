@@ -1,17 +1,20 @@
 # Reports
 
-DatasetLint reports are available as console output, JSON, or Markdown.
+DatasetLint reports are available as console output, JSON, Markdown, or static HTML.
 
 ```bash
 datasetlint examples/minimal_dataset --format console
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
+datasetlint examples/minimal_dataset --format html
 ```
 
-Use the dedicated report command when you want a JSON artifact:
+Use the dedicated report command when you want a report artifact:
 
 ```bash
 datasetlint report examples/minimal_dataset --out datasetlint-report.json
+datasetlint report examples/minimal_dataset --out datasetlint-report.md
+datasetlint report examples/minimal_dataset --out datasetlint-report.html
 ```
 
 Formatted validation output still prints to stdout. Redirect output when you
@@ -20,9 +23,17 @@ want those representations as files:
 ```bash
 datasetlint examples/minimal_dataset --format json > datasetlint-report.json
 datasetlint examples/minimal_dataset --format markdown > datasetlint-report.md
+datasetlint examples/bad_dataset --format html > report.html
+datasetlint report examples/bad_dataset --out report.html
 ```
 
-HTML output is not implemented in v0.1.
+The HTML report is plain static HTML with no frontend build step. It includes the dataset path, pass/fail state, issue counts by severity, checks run, adapter name and mode, dataset fingerprint, config summary, dataset summary, stats when available, and an issue table with severity, check, file, row, message, and metadata.
+
+Committed sample reports:
+
+- `examples/reports/minimal_report.json`
+- `examples/reports/bad_report.json`
+- `examples/reports/bad_report.md`
 
 ## Validation Report Fields
 
@@ -78,6 +89,10 @@ Adapter validation returns `AdapterValidationReport`:
 - `dataset_root`
 - `detected`
 - `valid`
+- `validation_mode`
+- `checked`
+- `not_checked`
+- `limitations`
 - `errors`
 - `warnings`
 - `coverage`
