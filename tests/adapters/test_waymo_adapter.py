@@ -96,3 +96,37 @@ def test_waymo_deep_validation_uses_parser_metadata(monkeypatch):
     assert report.coverage["annotations"] is True
     assert report.coverage["calibration"] is True
     assert report.stats["frame_count"] == 1
+
+
+def test_waymo_deep_parse_failure_is_invalid(monkeypatch):
+    def fake_parse(dataset_root: Path, files: list[Path], *, max_frames: int):
+        return waymo_module._ParsedWaymo(
+            sequences=[
+                waymo_module.SequenceRecord(
+                    sequence_id="segment-000001",
+                    name="segment-000001",
+                    frame_count=0,
+                )
+            ],
+            frames=[],
+            sensors=[],
+            annotations=[],
+            calibration=[],
+            metadata={
+                "parse_mode": "deep",
+                "tfrecord_files": ["segment-000001.tfrecord"],
+                "frame_count": 0,
+                "annotation_count": 0,
+                "calibration_count": 0,
+            },
+            warnings=["Could not parse segment-000001.tfrecord: invalid TFRecord."],
+            limitations=["payloads not decoded"],
+        )
+
+    monkeypatch.setattr(waymo_module, "_parse_waymo_files", fake_parse)
+
+    report = WaymoAdapter().validate(FIXTURES / "waymo_index_only", deep=True)
+
+    assert report.valid is False
+    assert "Could not parse segment-000001.tfrecord" in report.errors[0]
+    assert report.warnings == []

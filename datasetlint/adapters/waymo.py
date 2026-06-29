@@ -116,6 +116,10 @@ class WaymoAdapter(DatasetAdapter):
         if duplicates:
             errors.append(f"Duplicate segment names: {', '.join(duplicates)}.")
         deep = manifest.metadata.get("parse_mode") == "deep"
+        if deep:
+            parse_errors = _parse_errors(warnings)
+            errors.extend(parse_errors)
+            warnings = [warning for warning in warnings if warning not in parse_errors]
         scope = _waymo_scope(deep, manifest.limitations)
         parsed_frame_count = len(manifest.frames) if deep else 0
         parsed_sensor_count = len(manifest.sensors) if deep else 0
@@ -338,6 +342,10 @@ def _tfrecord_files(path: Path) -> list[Path]:
             if file_path.is_file() and _is_tfrecord(file_path)
         )
     return []
+
+
+def _parse_errors(warnings: list[str]) -> list[str]:
+    return [warning for warning in warnings if warning.startswith("Could not parse ")]
 
 
 def _split_for_path(root: Path, path: Path) -> str | None:
