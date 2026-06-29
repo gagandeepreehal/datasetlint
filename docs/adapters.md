@@ -37,7 +37,7 @@ All adapter commands support `--format console`, `--format json`, and `--format 
 
 ## Validation Coverage
 
-Adapter validation reports expose `validation_mode`, `checked`, `not_checked`, and `limitations` so CI output does not overclaim coverage.
+Adapter validation reports expose `validation_mode`, `checked`, `not_checked`, and `limitations` so CI output does not overclaim coverage. They also include `coverage.common_rule_inputs` and `stats.common_rule_stats` when decoded manifest records are available for shared checks such as frame references, timestamp consistency, sensor links, calibration shape, annotation links, and split references.
 
 | Adapter | Validation mode | Checked | Not checked |
 | --- | --- | --- | --- |
@@ -53,7 +53,9 @@ Adapter validation reports expose `validation_mode`, `checked`, `not_checked`, a
 | `mcap` default | index-level | MCAP file discovery, file sizes, empty file detection | messages, channels, schemas, timestamp synchronization |
 | `mcap --deep` | deep metadata | MCAP file discovery, channel metadata, schema metadata, message timestamp index | message payload decoding, sensor-specific semantic validation |
 
-Deep native rule validation currently means the DatasetLint folder rule engine. Adapter `--deep` mode parses external-format metadata into manifests; it does not yet run every native rule over those manifests.
+Common manifest rules only run on records the adapter actually decoded. Waymo index-mode TFRecord placeholders are not counted as common frame or sensor inputs. MCAP and ROS bag `--deep` modes contribute channel/topic timestamp records to common timestamp checks, but message payloads are still not decoded into camera images, point clouds, poses, or labels.
+
+Deep native rule validation currently means the DatasetLint folder rule engine. Adapter `--deep` mode parses external-format metadata into manifests and runs the shared manifest-rule layer where possible; it does not yet run every native rule over those manifests.
 
 ## Installation Extras
 
@@ -142,5 +144,5 @@ Cover:
 
 - The core rule engine still validates native folder CSV/JSON datasets.
 - `waymo`, `rosbag`, and `mcap` default to index-only validation unless `--deep` is requested and the matching optional dependency is installed.
-- Hugging Face remote loading requires the `datasets` extra and sampling safeguards; it does not scan entire remote datasets by default.
+- Hugging Face remote loading requires the `datasets` extra and sampling safeguards; it does not scan entire remote datasets by default. Sampled label/bbox-like columns are exposed as common annotation inputs, but full dataset-specific row schemas remain best-effort.
 - Adapter plugins are registered in code, not discovered dynamically from entry points yet.

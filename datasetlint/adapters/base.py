@@ -200,16 +200,36 @@ class DatasetAdapter:
         if manifest is not None:
             warnings.extend(manifest.provenance.warnings)
             warnings.extend(manifest.limitations)
+        scope = validation_scope(
+            self.name, manifest.limitations if manifest is not None else []
+        )
+        coverage = _coverage_for_manifest(manifest)
+        stats = _stats_for_manifest(manifest)
+        if manifest is not None:
+            from datasetlint.adapters.manifest_rules import (
+                merge_common_rule_result,
+                run_manifest_rules,
+            )
+
+            common_result = run_manifest_rules(manifest, root)
+            scope, errors, warnings, coverage, stats = merge_common_rule_result(
+                scope=scope,
+                errors=errors,
+                warnings=warnings,
+                coverage=coverage,
+                stats=stats,
+                result=common_result,
+            )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
             detected=detected,
             valid=not errors,
-            **validation_scope(self.name, manifest.limitations if manifest is not None else []),
+            **scope,
             errors=errors,
             warnings=warnings,
-            coverage=_coverage_for_manifest(manifest),
-            stats=_stats_for_manifest(manifest),
+            coverage=coverage,
+            stats=stats,
         )
 
     def availability(self) -> AdapterInfo:

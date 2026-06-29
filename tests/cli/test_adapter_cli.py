@@ -61,6 +61,7 @@ def test_cli_validate_works():
     assert payload["checked"]
     assert payload["not_checked"]
     assert payload["limitations"]
+    assert payload["coverage"]["common_rule_inputs"]["frames"] is True
 
 
 def test_cli_validate_deep_adapter_mode(monkeypatch):
@@ -113,6 +114,8 @@ def test_cli_validate_deep_adapter_mode(monkeypatch):
     payload = json.loads(result.stdout)
     assert payload["validation_mode"] == "deep"
     assert payload["coverage"]["message_timestamps"] is True
+    assert payload["coverage"]["common_rule_inputs"]["frames"] is True
+    assert "common timestamp consistency" in payload["checked"]
 
 
 def test_cli_validate_json_exits_nonzero_when_invalid(tmp_path):

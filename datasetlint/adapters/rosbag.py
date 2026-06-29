@@ -24,6 +24,7 @@ from datasetlint.adapters.base import (
     validation_scope,
 )
 from datasetlint.adapters.errors import AdapterDependencyError
+from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
 
 class ROSBagAdapter(DatasetAdapter):
@@ -130,6 +131,24 @@ class ROSBagAdapter(DatasetAdapter):
             errors.extend(parse_errors)
             warnings = [warning for warning in warnings if warning not in parse_errors]
         scope = _rosbag_scope(deep, manifest.limitations)
+        coverage = {
+            "sequences": bool(manifest.sequences),
+            "topics": bool(manifest.sensors),
+            "message_timestamps": bool(manifest.frames),
+        }
+        stats = {
+            "bag_count": len(manifest.sequences),
+            "topic_count": len(manifest.sensors),
+            "message_count": manifest.metadata.get("message_count", 0),
+        }
+        scope, errors, warnings, coverage, stats = merge_common_rule_result(
+            scope=scope,
+            errors=errors,
+            warnings=warnings,
+            coverage=coverage,
+            stats=stats,
+            result=run_manifest_rules(manifest, root),
+        )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
@@ -138,16 +157,8 @@ class ROSBagAdapter(DatasetAdapter):
             **scope,
             errors=errors,
             warnings=warnings,
-            coverage={
-                "sequences": bool(manifest.sequences),
-                "topics": bool(manifest.sensors),
-                "message_timestamps": bool(manifest.frames),
-            },
-            stats={
-                "bag_count": len(manifest.sequences),
-                "topic_count": len(manifest.sensors),
-                "message_count": manifest.metadata.get("message_count", 0),
-            },
+            coverage=coverage,
+            stats=stats,
         )
 
     def load_metadata(self, path: str | Path) -> DatasetMetadata:

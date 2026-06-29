@@ -20,6 +20,7 @@ from datasetlint.adapters.base import (
     relative_to_root,
     validation_scope,
 )
+from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}
 
@@ -55,12 +56,12 @@ class KittiAdapter(DatasetAdapter):
         errors: list[str] = []
         warnings = list(manifest.provenance.warnings)
         image_ids = {
-            frame.frame_id
+            _logical_frame_id(frame)
             for frame in manifest.frames
             if frame.sensor_id and "image" in frame.sensor_id
         }
         lidar_ids = {
-            frame.frame_id
+            _logical_frame_id(frame)
             for frame in manifest.frames
             if frame.sensor_id and "velodyne" in frame.sensor_id
         }
@@ -99,26 +100,37 @@ class KittiAdapter(DatasetAdapter):
                     f"Timestamp count mismatch in sequence {sequence.sequence_id}: "
                     f"{len(times)} timestamps for {expected} frames."
                 )
+        scope = validation_scope(self.name, manifest.limitations)
+        coverage = {
+            "frames": bool(manifest.frames),
+            "annotations": bool(manifest.annotations),
+            "calibration": bool(manifest.calibration),
+            "lidar": bool(lidar_ids),
+        }
+        stats = {
+            "sequence_count": len(manifest.sequences),
+            "frame_count": len(manifest.frames),
+            "annotation_count": len(manifest.annotations),
+            "calibration_count": len(manifest.calibration),
+        }
+        scope, errors, warnings, coverage, stats = merge_common_rule_result(
+            scope=scope,
+            errors=errors,
+            warnings=warnings,
+            coverage=coverage,
+            stats=stats,
+            result=run_manifest_rules(manifest, root),
+        )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
             detected=self.detect(root),
             valid=not errors,
-            **validation_scope(self.name, manifest.limitations),
+            **scope,
             errors=errors,
             warnings=warnings,
-            coverage={
-                "frames": bool(manifest.frames),
-                "annotations": bool(manifest.annotations),
-                "calibration": bool(manifest.calibration),
-                "lidar": bool(lidar_ids),
-            },
-            stats={
-                "sequence_count": len(manifest.sequences),
-                "frame_count": len(manifest.frames),
-                "annotation_count": len(manifest.annotations),
-                "calibration_count": len(manifest.calibration),
-            },
+            coverage=coverage,
+            stats=stats,
         )
 
     def load_metadata(self, path: str | Path) -> DatasetMetadata:
@@ -233,14 +245,17 @@ def _frames_for_files(
     for index, file_path in enumerate(files):
         records.append(
             FrameRecord(
-                frame_id=file_path.stem,
+                frame_id=_sensor_frame_id(sensor_id, file_path),
                 sequence_id=sensor_id.split("/", 1)[0] if "/" in sensor_id else "object",
                 timestamp=timestamps[index]
                 if timestamps is not None and index < len(timestamps)
                 else None,
                 sensor_id=sensor_id,
                 file_path=relative_to_root(root, file_path),
-                metadata={"extension": file_path.suffix.lower()},
+                metadata={
+                    "extension": file_path.suffix.lower(),
+                    "logical_frame_id": file_path.stem,
+                },
             )
         )
     return records
@@ -268,7 +283,7 @@ def _labels(root: Path, labels_dir: Path) -> list[AnnotationRecord]:
             annotations.append(
                 AnnotationRecord(
                     annotation_id=f"{label_file.stem}-{row_index}",
-                    frame_id=label_file.stem,
+                    frame_id=f"image_2/{label_file.stem}",
                     sequence_id="object",
                     category=parts[0] if parts else None,
                     annotation_type="bbox_3d" if len(parts) >= 15 else "unknown",
@@ -300,14 +315,24 @@ def _calibration_file_records(
         "frame_id": frame_id,
         "source": str(calib_file if root is None else relative_to_root(root, calib_file)),
     }
+    sensor_prefix = f"{frame_id}/" if root is None else ""
     return [
         CalibrationRecord(
-            sensor_id="image_2",
-            target_sensor_id="velodyne",
+            sensor_id=f"{sensor_prefix}image_2",
+            target_sensor_id=f"{sensor_prefix}velodyne",
             intrinsic=_parse_projection(calib_file),
             metadata=metadata,
         )
     ]
+
+
+def _sensor_frame_id(sensor_id: str, file_path: Path) -> str:
+    return f"{sensor_id}/{file_path.stem}"
+
+
+def _logical_frame_id(frame: FrameRecord) -> str:
+    value = frame.metadata.get("logical_frame_id")
+    return str(value) if value is not None else frame.frame_id.rsplit("/", 1)[-1]
 
 
 def _parse_projection(path: Path) -> list[list[float]] | None:

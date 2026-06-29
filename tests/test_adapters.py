@@ -13,11 +13,23 @@ def test_folder_adapter_loading(tmp_path):
     metadata = adapter.load_metadata(dataset)
     sensors = adapter.list_sensors(dataset)
     labels = adapter.load_labels(dataset)
+    manifest = adapter.load(dataset)
 
     assert metadata.name == "sample_log"
     assert {sensor.name for sensor in sensors} == {"camera_front", "gps", "imu"}
     assert labels is not None
     assert len(labels) == 3
+    assert len({annotation.annotation_id for annotation in manifest.annotations}) == 3
+
+
+def test_folder_adapter_validation_accepts_repeated_track_ids(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    adapter = get_adapter(dataset, "folder")
+
+    report = adapter.validate(dataset)
+
+    assert report.valid is True
+    assert not any("Duplicate annotation id" in error for error in report.errors)
 
 
 def test_adapter_auto_detection(tmp_path):

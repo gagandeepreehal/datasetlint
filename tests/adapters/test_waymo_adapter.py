@@ -34,8 +34,12 @@ def test_waymo_index_validation_does_not_claim_parsed_frames_or_sensors():
     assert report.coverage["index_only"] is True
     assert report.coverage["frames"] is False
     assert report.coverage["sensors"] is False
+    assert report.coverage["common_rule_inputs"]["frames"] is False
+    assert report.coverage["common_rule_inputs"]["sensors"] is False
     assert report.stats["frame_count"] == 0
     assert report.stats["sensor_count"] == 0
+    assert report.stats["common_rule_stats"]["frame_count"] == 0
+    assert report.stats["common_rule_stats"]["sensor_count"] == 0
 
 
 def test_waymo_deep_validation_uses_parser_metadata(monkeypatch):
@@ -95,7 +99,10 @@ def test_waymo_deep_validation_uses_parser_metadata(monkeypatch):
     assert report.coverage["index_only"] is False
     assert report.coverage["annotations"] is True
     assert report.coverage["calibration"] is True
+    assert report.coverage["common_rule_inputs"]["frames"] is True
+    assert "common timestamp consistency" in report.checked
     assert report.stats["frame_count"] == 1
+    assert report.stats["common_rule_stats"]["frame_count"] == 1
 
 
 def test_waymo_deep_parse_failure_is_invalid(monkeypatch):

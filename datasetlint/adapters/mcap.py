@@ -24,6 +24,7 @@ from datasetlint.adapters.base import (
     validation_scope,
 )
 from datasetlint.adapters.errors import AdapterDependencyError
+from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
 
 class MCAPAdapter(DatasetAdapter):
@@ -118,6 +119,27 @@ class MCAPAdapter(DatasetAdapter):
             errors.extend(parse_errors)
             warnings = [warning for warning in warnings if warning not in parse_errors]
         scope = _mcap_scope(deep, manifest.limitations)
+        coverage = {
+            "sequences": bool(manifest.sequences),
+            "channels": bool(manifest.metadata.get("channels")),
+            "schemas": bool(manifest.metadata.get("schemas")),
+            "message_timestamps": bool(manifest.frames),
+        }
+        stats = {
+            "mcap_count": len(files),
+            "sequence_count": len(manifest.sequences),
+            "channel_count": len(manifest.metadata.get("channels", [])),
+            "schema_count": len(manifest.metadata.get("schemas", [])),
+            "message_count": manifest.metadata.get("message_count", 0),
+        }
+        scope, errors, warnings, coverage, stats = merge_common_rule_result(
+            scope=scope,
+            errors=errors,
+            warnings=warnings,
+            coverage=coverage,
+            stats=stats,
+            result=run_manifest_rules(manifest, root),
+        )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
@@ -126,19 +148,8 @@ class MCAPAdapter(DatasetAdapter):
             **scope,
             errors=errors,
             warnings=warnings,
-            coverage={
-                "sequences": bool(manifest.sequences),
-                "channels": bool(manifest.metadata.get("channels")),
-                "schemas": bool(manifest.metadata.get("schemas")),
-                "message_timestamps": bool(manifest.frames),
-            },
-            stats={
-                "mcap_count": len(files),
-                "sequence_count": len(manifest.sequences),
-                "channel_count": len(manifest.metadata.get("channels", [])),
-                "schema_count": len(manifest.metadata.get("schemas", [])),
-                "message_count": manifest.metadata.get("message_count", 0),
-            },
+            coverage=coverage,
+            stats=stats,
         )
 
     def load_metadata(self, path: str | Path) -> DatasetMetadata:

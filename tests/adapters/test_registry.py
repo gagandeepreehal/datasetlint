@@ -118,3 +118,6 @@ def test_adapter_validation_reports_scope_and_limitations(
     assert payload["checked"]
     assert payload["not_checked"]
     assert payload["limitations"]
+    assert "common manifest input summary" in payload["checked"]
+    assert "common_rule_inputs" in payload["coverage"]
+    assert "common_rule_stats" in payload["stats"]

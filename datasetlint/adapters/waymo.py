@@ -27,6 +27,7 @@ from datasetlint.adapters.base import (
     validation_scope,
 )
 from datasetlint.adapters.errors import AdapterDependencyError
+from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
 
 class WaymoAdapter(DatasetAdapter):
@@ -123,6 +124,30 @@ class WaymoAdapter(DatasetAdapter):
         scope = _waymo_scope(deep, manifest.limitations)
         parsed_frame_count = len(manifest.frames) if deep else 0
         parsed_sensor_count = len(manifest.sensors) if deep else 0
+        coverage = {
+            "sequences": bool(manifest.sequences),
+            "frames": bool(parsed_frame_count),
+            "sensors": bool(parsed_sensor_count),
+            "annotations": bool(manifest.annotations),
+            "calibration": bool(manifest.calibration),
+            "index_only": not deep,
+        }
+        stats = {
+            "tfrecord_count": len(files),
+            "sequence_count": len(manifest.sequences),
+            "frame_count": parsed_frame_count,
+            "sensor_count": parsed_sensor_count,
+            "annotation_count": len(manifest.annotations),
+            "calibration_count": len(manifest.calibration),
+        }
+        scope, errors, warnings, coverage, stats = merge_common_rule_result(
+            scope=scope,
+            errors=errors,
+            warnings=warnings,
+            coverage=coverage,
+            stats=stats,
+            result=run_manifest_rules(manifest, root),
+        )
         return AdapterValidationReport(
             adapter_name=self.name,
             dataset_root=str(root),
@@ -131,22 +156,8 @@ class WaymoAdapter(DatasetAdapter):
             **scope,
             errors=errors,
             warnings=warnings,
-            coverage={
-                "sequences": bool(manifest.sequences),
-                "frames": bool(parsed_frame_count),
-                "sensors": bool(parsed_sensor_count),
-                "annotations": bool(manifest.annotations),
-                "calibration": bool(manifest.calibration),
-                "index_only": not deep,
-            },
-            stats={
-                "tfrecord_count": len(files),
-                "sequence_count": len(manifest.sequences),
-                "frame_count": parsed_frame_count,
-                "sensor_count": parsed_sensor_count,
-                "annotation_count": len(manifest.annotations),
-                "calibration_count": len(manifest.calibration),
-            },
+            coverage=coverage,
+            stats=stats,
         )
 
     def load_metadata(self, path: str | Path) -> DatasetMetadata:

@@ -116,6 +116,9 @@ datasetlint validate DATASET_PATH --format json
 Purpose: run adapter-specific validation and return errors, warnings, coverage,
 validation mode, checked scope, unchecked scope, limitations, and stats. This is
 separate from `datasetlint lint`, which runs the native folder rule engine.
+Validation output includes `coverage.common_rule_inputs` and
+`stats.common_rule_stats` when decoded adapter records can feed shared manifest
+checks.
 Use `--deep` with MCAP, ROS bag, or Waymo after installing the matching extra
 when you want parser-backed channel/topic/frame metadata instead of only file
 indexing.
