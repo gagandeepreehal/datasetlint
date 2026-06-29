@@ -65,6 +65,43 @@ def test_manifest_rules_validate_common_semantic_inputs(tmp_path):
     assert any("duplicate timestamp" in warning for warning in result.warnings)
 
 
+def test_manifest_rules_resolve_relative_frame_paths_from_single_file_root(tmp_path):
+    root_file = tmp_path / "log.bag"
+    root_file.write_text("placeholder", encoding="utf-8")
+    manifest = DatasetManifest(
+        dataset_name="log",
+        adapter_name="rosbag",
+        dataset_root=str(root_file),
+        sequences=[SequenceRecord(sequence_id="log")],
+        frames=[
+            FrameRecord(
+                frame_id="log:0",
+                sequence_id="log",
+                sensor_id="/camera/image",
+                file_path=root_file.name,
+            )
+        ],
+        sensors=[
+            SensorStream(
+                sensor_id="/camera/image",
+                sensor_type="camera",
+                frame_count=1,
+            )
+        ],
+        provenance=AdapterProvenance(
+            source_format="rosbag",
+            adapter_version="0.1",
+            loaded_at="2026-01-01T00:00:00+00:00",
+            root_hash=None,
+            files_indexed=1,
+        ),
+    )
+
+    result = run_manifest_rules(manifest, root_file)
+
+    assert not any("Frame file does not exist" in error for error in result.errors)
+
+
 def test_waymo_index_placeholders_are_not_common_semantic_inputs(tmp_path):
     manifest = DatasetManifest(
         dataset_name="waymo",

@@ -325,7 +325,9 @@ def _missing_local_file(root: str | Path, file_path: str | None) -> str | None:
     if "://" in root_text:
         return None
     path = Path(file_path)
-    candidate = path if path.is_absolute() else Path(root_text) / path
+    root_path = Path(root_text)
+    base_path = root_path.parent if root_path.is_file() else root_path
+    candidate = path if path.is_absolute() else base_path / path
     return file_path if not candidate.is_file() else None
 
 
