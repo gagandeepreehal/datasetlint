@@ -101,7 +101,9 @@ def lint_dataset(
 ) -> LintReport:
     """Validate a folder-based robotics dataset."""
 
-    dataset_path = Path(path).expanduser().resolve()
+    input_path = Path(path).expanduser()
+    dataset_path = input_path.resolve()
+    report_dataset_path = str(input_path)
     lint_config = load_config(dataset_path, config)
     try:
         selected_checks = _select_checks(checks)
@@ -113,7 +115,7 @@ def lint_dataset(
             file=str(dataset_path),
         )
         return LintReport(
-            dataset_path=str(dataset_path),
+            dataset_path=report_dataset_path,
             issues=[issue],
             stats={
                 "issue_count": 1,
@@ -136,7 +138,7 @@ def lint_dataset(
             metadata={"adapter": selected_adapter.name},
         )
         return LintReport(
-            dataset_path=str(dataset_path),
+            dataset_path=report_dataset_path,
             issues=[issue],
             stats={"issue_count": 1},
             passed=False,
@@ -159,7 +161,7 @@ def lint_dataset(
     stats = _build_stats(ctx, issues)
     passed = not any(issue.severity == "error" for issue in issues)
     return LintReport(
-        dataset_path=str(dataset_path),
+        dataset_path=report_dataset_path,
         issues=issues,
         stats=stats,
         passed=passed,

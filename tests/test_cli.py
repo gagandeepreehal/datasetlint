@@ -102,6 +102,55 @@ def test_cli_report_writes_json(tmp_path):
     assert payload["adapter"]["name"] == "folder"
 
 
+def test_cli_report_preserves_user_supplied_dataset_path(tmp_path):
+    output = tmp_path / "report.json"
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["report", "examples/minimal_dataset", "--out", str(output)])
+
+    assert result.exit_code == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["dataset_path"] == "examples/minimal_dataset"
+
+
+def test_cli_outputs_html_for_lint_command(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["lint", str(dataset), "--format", "html"])
+
+    assert result.exit_code == 0
+    assert "<!doctype html>" in result.stdout
+    assert "<title>DatasetLint Report</title>" in result.stdout
+    assert "Dataset Stats" in result.stdout
+
+
+def test_cli_shorthand_outputs_html(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    runner = CliRunner()
+
+    result = runner.invoke(app, [str(dataset), "--format", "html"])
+
+    assert result.exit_code == 0
+    assert "<!doctype html>" in result.stdout
+    assert "DatasetLint Report" in result.stdout
+
+
+def test_cli_report_writes_html(tmp_path):
+    dataset = write_good_dataset(tmp_path / "dataset")
+    output = tmp_path / "report.html"
+    runner = CliRunner()
+
+    result = runner.invoke(app, ["report", str(dataset), "--out", str(output)])
+
+    assert result.exit_code == 0
+    html = output.read_text(encoding="utf-8")
+    assert "<!doctype html>" in html
+    assert "Dataset Summary" in html
+    assert "Issue" in html
+    assert str(dataset) in html
+
+
 def test_cli_report_honors_fail_on_warning(tmp_path):
     dataset = write_good_dataset(tmp_path / "dataset")
     output = tmp_path / "report.json"
@@ -120,6 +169,31 @@ def test_cli_report_honors_fail_on_warning(tmp_path):
     payload = json.loads(output.read_text(encoding="utf-8"))
     assert payload["passed"] is True
     assert payload["stats"]["issue_count_by_severity"]["warning"] == 1
+
+
+def test_release_checklist_cli_smoke_commands():
+    runner = CliRunner()
+
+    version_result = runner.invoke(app, ["--version"])
+    help_result = runner.invoke(app, ["--help"])
+    minimal_result = runner.invoke(app, ["examples/minimal_dataset"])
+    bad_result = runner.invoke(app, ["examples/bad_dataset"])
+    diff_result = runner.invoke(
+        app,
+        ["diff", "examples/minimal_dataset", "examples/bad_dataset", "--fail-on-regression"],
+    )
+
+    assert version_result.exit_code == 0
+    assert version_result.stdout.strip() == "datasetlint 0.1.0"
+    assert help_result.exit_code == 0
+    assert "Usage:" in help_result.stdout
+    assert minimal_result.exit_code == 0
+    assert "passed with 0" in minimal_result.stdout
+    assert "issue(s)" in minimal_result.stdout
+    assert bad_result.exit_code == 1
+    assert "failed" in bad_result.stdout
+    assert diff_result.exit_code == 1
+    assert "DatasetLint diff" in diff_result.stdout
 
 
 def test_python_module_help_entrypoint():

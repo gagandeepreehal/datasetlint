@@ -26,9 +26,11 @@ It is intentionally small:
 - [Checks](checks.md)
 - [Configuration](configuration.md)
 - [Reports](reports.md)
+- [CI Templates](ci.md)
 - [Stats](stats.md)
 - [Diff](diff.md)
 - [Adapters](adapters.md)
+- [Architecture](architecture.md)
 
 ## Maintainer And Contributor Docs
 
@@ -39,4 +41,4 @@ It is intentionally small:
 
 ## Current Status
 
-DatasetLint v0.1 supports deep rule validation for its native folder format and normalized adapter manifests for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets. Waymo, ROS bag, and MCAP default to lightweight index-only manifests unless optional parser dependencies are installed.
+DatasetLint v0.1 supports deep rule validation for its native folder format and normalized adapter manifests for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets. Waymo, ROS bag, and MCAP default to lightweight index manifests; install the matching extra and use `--deep` for parser-backed metadata.

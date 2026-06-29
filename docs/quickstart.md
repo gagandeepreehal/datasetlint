@@ -32,6 +32,8 @@ DatasetLint report for .../examples/minimal_dataset: passed with 0 issue(s) (err
 ```bash
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
+datasetlint examples/minimal_dataset --format html > report.html
+datasetlint report examples/minimal_dataset --out report.html
 ```
 
 ## 4. Run Focused Checks
@@ -49,6 +51,12 @@ datasetlint examples/bad_dataset
 ```
 
 This exits with code `1` because the fixture intentionally contains missing files, invalid calibration, timestamp issues, label problems, and trajectory anomalies.
+
+Generated sample reports are committed for quick inspection:
+
+- `examples/reports/minimal_report.json`
+- `examples/reports/bad_report.json`
+- `examples/reports/bad_report.md`
 
 ## 6. Compute Stats And Diffs
 

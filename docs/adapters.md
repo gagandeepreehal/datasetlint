@@ -13,11 +13,13 @@ datasetlint adapters DATASET_PATH
 datasetlint inspect DATASET_PATH --adapter coco
 datasetlint inspect DATASET_PATH --auto-detect
 datasetlint validate DATASET_PATH --adapter kitti
+datasetlint validate DATASET_PATH --adapter mcap --deep
+datasetlint inspect DATASET_PATH --adapter waymo --deep --max-rows 1000
 datasetlint validate hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
 datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.json
 ```
 
-All adapter commands support `--format console`, `--format json`, and `--format markdown` except `export-manifest`, which writes JSON to `--output`.
+All adapter commands support `--format console`, `--format json`, and `--format markdown` except `export-manifest`, which writes JSON to `--output`. `inspect`, `validate`, and `export-manifest` also accept `--deep` for parser-backed MCAP, ROS bag, and Waymo metadata when the matching optional extra is installed.
 
 ## Supported Datasets
 
@@ -28,10 +30,30 @@ All adapter commands support `--format console`, `--format json`, and `--format 
 | COCO | `coco` | supported | none | Direct JSON parser for images, categories, bbox, and segmentation references |
 | KITTI | `kitti` | supported | none | Object and odometry layouts with camera, lidar, labels, calibration, and timestamps |
 | nuScenes | `nuscenes` | supported | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit |
-| Waymo | `waymo` | index-supported | optional Waymo package | TFRecord indexing by default; full parse remains optional |
-| ROS bag | `rosbag` | index-supported | optional `rosbags` | ROS1/ROS2 file indexing and lightweight ROS2 metadata topic summaries |
-| MCAP | `mcap` | index-supported | optional `mcap` | File indexing by default; channel/schema parsing is optional |
+| Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata |
+| ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
+| MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
 | Hugging Face | `huggingface` | supported | `datasets` | Cache metadata indexing plus guarded remote sampling |
+
+## Validation Coverage
+
+Adapter validation reports expose `validation_mode`, `checked`, `not_checked`, and `limitations` so CI output does not overclaim coverage.
+
+| Adapter | Validation mode | Checked | Not checked |
+| --- | --- | --- | --- |
+| `folder` | manifest-level through `datasetlint validate`; deep rules through `datasetlint lint` | native folder manifest extraction and file discovery | deep lint rules in adapter validation output |
+| `coco` | manifest-level | JSON structure, image references, category references, basic bbox dimensions | image payload decoding, robotics calibration, sensor synchronization |
+| `kitti` | manifest-level | KITTI layout, image/lidar pairing, label row shape, calibration file presence, odometry timestamp monotonicity | binary point cloud contents, camera image decoding, 3D geometry realism |
+| `nuscenes` | manifest-level | metadata tables, sample/sample_data references, annotation references, calibrated sensor references | sensor payload decoding, map layers, full devkit checks |
+| `huggingface` | manifest-level | cache metadata or remote metadata, split/sample availability | full dataset scan, robotics calibration, sensor synchronization, label geometry |
+| `waymo` default | index-level | TFRecord file discovery, file sizes, duplicate segment names | frame parsing, labels, calibration, sensor synchronization |
+| `waymo --deep` | deep metadata | TFRecord frame parsing, camera/lidar sensor metadata, label metadata, calibration metadata | camera image bytes, lidar range images, Waymo metric evaluation |
+| `rosbag` default | index-level | bag file discovery, ROS2 `metadata.yaml`, empty bag files, lightweight topic summaries when available | message payloads, topic schemas, timestamp synchronization |
+| `rosbag --deep` | deep metadata | bag file discovery, topic metadata, message types, message timestamp index | message payload decoding, sensor-specific semantic validation |
+| `mcap` default | index-level | MCAP file discovery, file sizes, empty file detection | messages, channels, schemas, timestamp synchronization |
+| `mcap --deep` | deep metadata | MCAP file discovery, channel metadata, schema metadata, message timestamp index | message payload decoding, sensor-specific semantic validation |
+
+Deep native rule validation currently means the DatasetLint folder rule engine. Adapter `--deep` mode parses external-format metadata into manifests; it does not yet run every native rule over those manifests.
 
 ## Installation Extras
 
@@ -119,6 +141,6 @@ Cover:
 ## Current Limitations
 
 - The core rule engine still validates native folder CSV/JSON datasets.
-- `waymo`, `rosbag`, and `mcap` default to index-only manifests.
-- Hugging Face remote loading requires the `datasets` extra and sampling safeguards.
+- `waymo`, `rosbag`, and `mcap` default to index-only validation unless `--deep` is requested and the matching optional dependency is installed.
+- Hugging Face remote loading requires the `datasets` extra and sampling safeguards; it does not scan entire remote datasets by default.
 - Adapter plugins are registered in code, not discovered dynamically from entry points yet.

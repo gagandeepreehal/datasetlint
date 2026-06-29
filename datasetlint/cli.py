@@ -14,6 +14,7 @@ from rich.table import Table
 from datasetlint._version import __version__
 from datasetlint.adapters import (
     AdapterError,
+    AdapterValidationReport,
     DatasetManifest,
     detect_adapter,
     detect_adapters,
@@ -24,8 +25,7 @@ from datasetlint.adapters import (
 from datasetlint.core import lint_dataset, validate_checks
 from datasetlint.diff import DatasetDiffReport, compare_datasets
 from datasetlint.formatters.console import print_report
-from datasetlint.report import LintReport
-from datasetlint.report import should_fail
+from datasetlint.report import LintReport, should_fail
 from datasetlint.stats import DatasetStats, compute_dataset_stats
 
 app = typer.Typer(add_completion=False, help="Validate robotics and Physical AI datasets.")
@@ -90,6 +90,16 @@ def main(
         bool,
         typer.Option("--streaming", help="Use streaming mode when supported by the adapter."),
     ] = False,
+    deep: Annotated[
+        bool,
+        typer.Option(
+            "--deep",
+            help=(
+                "Use optional parser-backed validation for MCAP, ROS bag, and Waymo "
+                "when dependencies are installed."
+            ),
+        ),
+    ] = False,
     max_rows: Annotated[
         int | None,
         typer.Option("--max-rows", help="Maximum rows to inspect for sampling adapters."),
@@ -129,7 +139,7 @@ def main(
         _run_lint(args[1:], config, checks, adapter, format, fail_on)
         return
     if command == "report":
-        _run_report(args[1:], config, checks, adapter, out)
+        _run_report(args[1:], config, checks, adapter, out, fail_on)
         return
     if command == "stats":
         _run_stats(args[1:], config, format)
@@ -141,13 +151,17 @@ def main(
         _run_adapters(args[1:], format)
         return
     if command == "inspect":
-        _run_inspect(args[1:], adapter, auto_detect, split, streaming, max_rows, format)
+        _run_inspect(args[1:], adapter, auto_detect, split, streaming, deep, max_rows, format)
         return
     if command == "validate":
-        _run_adapter_validate(args[1:], adapter, auto_detect, split, streaming, max_rows, format)
+        _run_adapter_validate(
+            args[1:], adapter, auto_detect, split, streaming, deep, max_rows, format
+        )
         return
     if command == "export-manifest":
-        _run_export_manifest(args[1:], adapter, auto_detect, split, streaming, max_rows, output)
+        _run_export_manifest(
+            args[1:], adapter, auto_detect, split, streaming, deep, max_rows, output
+        )
         return
 
     if len(args) != 1:
@@ -184,6 +198,7 @@ def _run_report(
     checks: str | None,
     adapter: str,
     out: Path | None,
+    fail_on: FailLevel,
 ) -> None:
     if len(args) != 1:
         _usage_error("report expects one dataset path.")
@@ -212,6 +227,8 @@ def _run_report(
     except OSError as exc:
         _usage_error(f"Could not write report to {out}: {exc}.")
     typer.echo(f"Wrote report to {out}")
+    if should_fail(report, fail_on.value):
+        raise typer.Exit(1)
 
 
 def _emit_lint_report(report: LintReport, format: OutputFormat) -> None:
@@ -381,6 +398,7 @@ def _run_inspect(
     auto_detect: bool,
     split: str | None,
     streaming: bool,
+    deep: bool,
     max_rows: int | None,
     format: OutputFormat,
 ) -> None:
@@ -395,6 +413,7 @@ def _run_inspect(
             adapter=adapter_name,
             split=split,
             streaming=streaming,
+            deep=deep,
             max_rows=max_rows,
         )
     except AdapterError as exc:
@@ -424,6 +443,7 @@ def _run_adapter_validate(
     auto_detect: bool,
     split: str | None,
     streaming: bool,
+    deep: bool,
     max_rows: int | None,
     format: OutputFormat,
 ) -> None:
@@ -438,6 +458,7 @@ def _run_adapter_validate(
             adapter=adapter_name,
             split=split,
             streaming=streaming,
+            deep=deep,
             max_rows=max_rows,
         )
     except AdapterError as exc:
@@ -448,20 +469,7 @@ def _run_adapter_validate(
             raise typer.Exit(1)
         return
     if format is OutputFormat.markdown:
-        lines = [
-            "# DatasetLint Adapter Validation",
-            "",
-            f"- adapter: `{report.adapter_name}`",
-            f"- valid: `{report.valid}`",
-            f"- detected: `{report.detected}`",
-            f"- stats: `{report.stats}`",
-            f"- coverage: `{report.coverage}`",
-        ]
-        if report.errors:
-            lines.append(f"- errors: {', '.join(report.errors)}")
-        if report.warnings:
-            lines.append(f"- warnings: {', '.join(report.warnings)}")
-        typer.echo("\n".join(lines) + "\n")
+        typer.echo(_adapter_validation_markdown(report))
         if not report.valid:
             raise typer.Exit(1)
         return
@@ -474,6 +482,10 @@ def _run_adapter_validate(
         console.print(f"Error: {error}")
     for warning in report.warnings:
         console.print(f"Warning: {warning}")
+    console.print(f"validation_mode={report.validation_mode}")
+    console.print(f"checked={report.checked}")
+    console.print(f"not_checked={report.not_checked}")
+    console.print(f"limitations={report.limitations}")
     console.print(f"coverage={report.coverage}")
     console.print(f"stats={report.stats}")
     if not report.valid:
@@ -486,6 +498,7 @@ def _run_export_manifest(
     auto_detect: bool,
     split: str | None,
     streaming: bool,
+    deep: bool,
     max_rows: int | None,
     output: Path | None,
 ) -> None:
@@ -500,6 +513,7 @@ def _run_export_manifest(
             adapter=adapter_name,
             split=split,
             streaming=streaming,
+            deep=deep,
             max_rows=max_rows,
         )
     except AdapterError as exc:
@@ -531,6 +545,28 @@ def _manifest_markdown(manifest: DatasetManifest) -> str:
         f"- splits: `{manifest_dict['splits']}`\n"
         f"- limitations: `{manifest_dict['limitations']}`\n"
     )
+
+
+def _adapter_validation_markdown(report: AdapterValidationReport) -> str:
+    report_dict = report.to_dict()
+    lines = [
+        "# DatasetLint Adapter Validation",
+        "",
+        f"- adapter: `{report_dict['adapter_name']}`",
+        f"- valid: `{report_dict['valid']}`",
+        f"- detected: `{report_dict['detected']}`",
+        f"- validation_mode: `{report_dict['validation_mode']}`",
+        f"- checked: `{report_dict['checked']}`",
+        f"- not_checked: `{report_dict['not_checked']}`",
+        f"- limitations: `{report_dict['limitations']}`",
+        f"- stats: `{report_dict['stats']}`",
+        f"- coverage: `{report_dict['coverage']}`",
+    ]
+    if report_dict["errors"]:
+        lines.append(f"- errors: {', '.join(report_dict['errors'])}")
+    if report_dict["warnings"]:
+        lines.append(f"- warnings: {', '.join(report_dict['warnings'])}")
+    return "\n".join(lines) + "\n"
 
 
 def _print_stats(stats: DatasetStats) -> None:

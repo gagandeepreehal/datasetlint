@@ -8,6 +8,7 @@ from typing import Any
 import pandas as pd
 
 from datasetlint.adapters.base import (
+    AdapterInfo,
     AdapterValidationReport,
     AnnotationRecord,
     CalibrationRecord,
@@ -41,6 +42,16 @@ class NuScenesAdapter(DatasetAdapter):
     supported_formats = ("nuscenes", "v1.0-mini", "v1.0-trainval", "v1.0-test")
     optional_dependencies = ("nuscenes",)
     description = "nuScenes metadata adapter for scenes, sample_data, sensors, and calibration."
+
+    def availability(self) -> AdapterInfo:
+        info = super().availability()
+        return AdapterInfo(
+            name=info.name,
+            supported_formats=info.supported_formats,
+            availability="available",
+            optional_dependencies=info.optional_dependencies,
+            description=info.description,
+        )
 
     def can_load(self, path: str | Path) -> bool:
         root = Path(path)

@@ -5,11 +5,35 @@
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-DatasetLint is a lightweight, local-first linting toolkit for robotics and physical AI datasets. It checks dataset structure, metadata, timestamps, labels, calibration, trajectories, simple distribution stats, dataset diffs, and adapter compatibility before bad data reaches training or evaluation.
+DatasetLint is a lightweight, local-first dataset validation, dataset QA, and linting toolkit for robotics and physical AI datasets. It checks dataset structure, metadata, timestamps, labels, calibration, trajectories, simple distribution stats, dataset diffs, and adapter compatibility before bad data reaches training or evaluation.
 
 It runs locally on folder-based datasets with Python, CSV, and JSON. It does not require robots, simulators, GPUs, ROS, cloud services, or model runtimes.
 
 Documentation: [DatasetLint docs](https://gagandeepreehal.github.io/datasetlint/)
+
+## Current Limitations
+
+- Deep validation works best on the native DatasetLint folder format.
+- Adapters provide manifest inspection, manifest export, and adapter validation for external formats.
+- MCAP, ROS bag, and Waymo default to lightweight index mode; install the matching extra and pass `--deep` to parse channel/topic/frame metadata.
+- Hugging Face validation uses cache metadata or guarded sampling rather than scanning entire remote datasets by default.
+- DatasetLint is not a dataset management platform, model evaluation framework, simulator, replay tool, or data host.
+- Large-dataset performance has not been benchmarked yet.
+- The config reader supports a small YAML subset, not full YAML syntax.
+
+## Try In 60 Seconds
+
+After installing from source, run the passing and failing examples:
+
+```bash
+datasetlint --version
+datasetlint examples/minimal_dataset
+datasetlint examples/bad_dataset
+datasetlint examples/bad_dataset --format html > report.html
+datasetlint diff examples/minimal_dataset examples/bad_dataset --fail-on-regression
+```
+
+`examples/minimal_dataset` should pass. `examples/bad_dataset` and the diff command should exit non-zero because they intentionally contain robotics data quality problems.
 
 ## Why This Exists
 
@@ -23,6 +47,23 @@ Robotics datasets often fail in quiet ways:
 - adapter-specific ingestion problems discovered too late
 
 DatasetLint catches those issues at the dataset folder boundary so teams can fail fast in local development and CI.
+
+## What DatasetLint Catches
+
+Concrete native-folder checks include:
+
+- missing metadata
+- broken file references
+- duplicate timestamps
+- timestamp gaps
+- sensor sync gaps
+- missing calibration
+- invalid camera intrinsics
+- non-normalized quaternion
+- invalid label geometry
+- duplicate track ID at same timestamp
+- unrealistic trajectory speed
+- dataset diff regression
 
 ## Who It Is For
 
@@ -107,6 +148,7 @@ Render machine-readable output:
 datasetlint report examples/minimal_dataset --out report.json
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
+datasetlint examples/minimal_dataset --format html > report.html
 ```
 
 Inspect the intentionally failing dataset:
@@ -138,13 +180,16 @@ datasetlint DATASET_PATH --adapter auto
 datasetlint DATASET_PATH --format console
 datasetlint DATASET_PATH --format json
 datasetlint DATASET_PATH --format markdown
+datasetlint DATASET_PATH --format html
 datasetlint DATASET_PATH --fail-on warning
 ```
 
-Write a JSON validation report:
+Write validation reports:
 
 ```bash
 datasetlint report DATASET_PATH --out report.json
+datasetlint report DATASET_PATH --out report.md
+datasetlint report DATASET_PATH --out report.html
 ```
 
 Compute statistics:
@@ -178,6 +223,8 @@ Inspect, validate, or export normalized manifests for common formats:
 datasetlint inspect DATASET_PATH --adapter coco
 datasetlint inspect DATASET_PATH --auto-detect
 datasetlint validate DATASET_PATH --adapter kitti
+datasetlint validate DATASET_PATH --adapter mcap --deep
+datasetlint inspect DATASET_PATH --adapter waymo --deep --max-rows 1000
 datasetlint validate hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
 datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.json
 ```
@@ -229,6 +276,12 @@ Public imports from `datasetlint` are `lint_dataset`, `compare_datasets`, `compu
 
 See [examples/README.md](examples/README.md) for commands and expected outcomes.
 
+Generated sample reports are committed under `examples/reports/`:
+
+- `examples/reports/minimal_report.json`
+- `examples/reports/bad_report.json`
+- `examples/reports/bad_report.md`
+
 ## Configuration
 
 DatasetLint uses defaults when no config is provided. A dataset can include `datasetlint.yaml`, or the CLI can receive `--config path/to/datasetlint.yaml`.
@@ -273,12 +326,14 @@ Validation reports include:
 - message and structured metadata
 - stats such as issue counts, sensor counts, and sync diagnostics
 
-Output formats are console, JSON, and Markdown:
+Output formats are console, JSON, Markdown, and static HTML:
 
 ```bash
 datasetlint examples/minimal_dataset --format console
 datasetlint examples/minimal_dataset --format json
 datasetlint examples/minimal_dataset --format markdown
+datasetlint examples/minimal_dataset --format html > report.html
+datasetlint report examples/bad_dataset --out report.html
 ```
 
 Issue row numbers use spreadsheet-style rows: the CSV header is row 1 and the first data row is row 2.
@@ -308,6 +363,8 @@ jobs:
 
 Use `--fail-on warning` for stricter validation, or `datasetlint diff OLD_DATASET NEW_DATASET --fail-on-regression` when comparing dataset revisions.
 
+More CI templates, including report artifacts and dataset diffs, are in [docs/ci.md](docs/ci.md).
+
 ## Supported Formats And Adapters
 
 | Dataset / Format | Adapter | Status | Optional Dependency | Notes |
@@ -317,24 +374,11 @@ Use `--fail-on warning` for stricter validation, or `datasetlint diff OLD_DATASE
 | COCO | `coco` | supported | none | Direct JSON parser for images, categories, bbox, and segmentation references |
 | KITTI | `kitti` | supported | none | Object and odometry layouts with camera, lidar, labels, calibration, and timestamps |
 | nuScenes | `nuscenes` | supported | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit |
-| Waymo | `waymo` | index-supported | optional Waymo package | TFRecord indexing by default; full parse remains optional |
-| ROS bag | `rosbag` | index-supported | optional `rosbags` | ROS1/ROS2 file indexing and lightweight ROS2 metadata topic summaries |
-| MCAP | `mcap` | index-supported | optional `mcap` | File indexing by default; channel/schema parsing is optional |
+| Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata |
+| ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
+| MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
 | Hugging Face | `huggingface` | supported | `datasets` | Cache metadata indexing plus guarded remote sampling |
 | Custom adapters | subclass `DatasetAdapter` | experimental | adapter-specific | Implement `detect`, `load`, and `validate`, then register the adapter |
-
-## Limitations
-
-- DatasetLint is not a dataset management platform.
-- DatasetLint is not a model evaluation framework.
-- DatasetLint is not a simulator or replay tool.
-- Current validation is local-first and file-based.
-- Existing rule checks still validate the native folder CSV/JSON format; non-folder adapters produce normalized manifests and adapter validation reports.
-- Waymo, ROS bag, and MCAP default to safe index-only manifests unless optional parsers are available.
-- Hugging Face remote datasets require the `datasets` extra and explicit sampling controls.
-- Large-dataset performance has not been benchmarked yet.
-- The config reader supports a small YAML subset, not full YAML syntax.
-- Report output is file/terminal oriented; there is no report UI yet.
 
 ## Roadmap
 
@@ -347,10 +391,10 @@ Near term:
 
 Medium term:
 
-- deeper MCAP, ROS bag, and Waymo optional parser integrations
+- deeper semantic decoding from MCAP, ROS bag, and Waymo payloads
 - conversion helpers from normalized manifests to the native lintable folder format
 - richer sensor synchronization checks
-- report UI or static HTML output
+- richer static HTML report styling while keeping reports dependency-free
 
 Long term:
 

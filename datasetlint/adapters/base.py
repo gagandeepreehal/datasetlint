@@ -383,7 +383,9 @@ _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
         "validation_mode": "manifest-level",
         "checked": ["recursive file index", "media/label/timestamp filename patterns"],
         "not_checked": ["format-specific schemas", "sensor synchronization", "label geometry"],
-        "limitations": ["Generic folder validation infers structure from filenames and extensions."],
+        "limitations": [
+            "Generic folder validation infers structure from filenames and extensions."
+        ],
     },
     "coco": {
         "validation_mode": "manifest-level",
@@ -405,7 +407,11 @@ _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
             "calibration file presence",
             "odometry timestamp monotonicity",
         ],
-        "not_checked": ["binary point cloud contents", "camera image decoding", "3D geometry realism"],
+        "not_checked": [
+            "binary point cloud contents",
+            "camera image decoding",
+            "3D geometry realism",
+        ],
         "limitations": ["KITTI validation parses text metadata and indexes binary sensor files."],
     },
     "nuscenes": {
@@ -423,7 +429,9 @@ _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
         "validation_mode": "index-level",
         "checked": ["TFRecord file discovery", "file sizes", "duplicate segment names"],
         "not_checked": ["frame parsing", "labels", "calibration", "sensor synchronization"],
-        "limitations": ["Waymo validation is index-level unless optional parsers are implemented."],
+        "limitations": [
+            "Waymo validation is index-level unless --deep is used with optional dependencies."
+        ],
     },
     "rosbag": {
         "validation_mode": "index-level",
@@ -434,13 +442,17 @@ _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
             "lightweight topic summaries when metadata is available",
         ],
         "not_checked": ["message payloads", "topic schemas", "timestamp synchronization"],
-        "limitations": ["ROS bag validation is index-level without optional ROS bag parsers."],
+        "limitations": [
+            "ROS bag validation is index-level unless --deep is used with optional dependencies."
+        ],
     },
     "mcap": {
         "validation_mode": "index-level",
         "checked": ["MCAP file discovery", "file sizes", "empty file detection"],
         "not_checked": ["messages", "channels", "schemas", "timestamp synchronization"],
-        "limitations": ["MCAP validation is index-level unless optional parsers are implemented."],
+        "limitations": [
+            "MCAP validation is index-level unless --deep is used with optional dependencies."
+        ],
     },
     "huggingface": {
         "validation_mode": "manifest-level",
