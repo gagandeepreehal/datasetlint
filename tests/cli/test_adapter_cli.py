@@ -140,6 +140,36 @@ def test_cli_validate_json_exits_nonzero_when_invalid(tmp_path):
     assert any("Missing image file" in error for error in payload["errors"])
 
 
+def test_cli_validate_json_reports_missing_deep_dependency(monkeypatch):
+    def fake_reader():
+        raise mcap_module.AdapterDependencyError(
+            "Deep MCAP parsing requires the optional mcap package."
+        )
+
+    monkeypatch.setattr(mcap_module, "_mcap_make_reader", fake_reader)
+
+    result = CliRunner().invoke(
+        app,
+        [
+            "validate",
+            str(FIXTURES / "mcap_index_only"),
+            "--adapter",
+            "mcap",
+            "--deep",
+            "--format",
+            "json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["adapter_name"] == "mcap"
+    assert payload["detected"] is True
+    assert payload["valid"] is False
+    assert payload["validation_mode"] == "deep"
+    assert "Deep MCAP parsing requires" in payload["errors"][0]
+
+
 def test_cli_validate_markdown_exits_nonzero_when_invalid(tmp_path):
     annotations = tmp_path / "annotations"
     annotations.mkdir()

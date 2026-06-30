@@ -68,6 +68,11 @@
     "max_speed_mps": 70.0,
     "min_overlap_ratio": 0.8,
     "missing_frame_gap_multiplier": 1.5,
+    "rules": {
+      "disabled": [],
+      "enabled": null,
+      "severity": {}
+    },
     "stationary_distance_threshold_m": 0.05,
     "timestamp_gap_threshold_sec": 0.5
   },
@@ -105,9 +110,10 @@
     {
       "check_name": "check_missing_sensor_files",
       "file": "sensors/gps.csv",
-      "message": "Metadata declares sensor 'gps', but sensors/gps.csv is missing.",
+      "message": "Metadata declares sensor 'gps', but sensors/gps.csv is missing. Location: sensors/gps.csv. Fix: add the sensor CSV or remove the stale declaration.",
       "metadata": {
-        "sensor": "gps"
+        "sensor": "gps",
+        "suggestion": "add the sensor CSV or remove the stale declaration."
       },
       "row": null,
       "severity": "error"
@@ -115,9 +121,10 @@
     {
       "check_name": "check_broken_paths",
       "file": "sensors/camera_front.csv",
-      "message": "Referenced file does not exist: images/missing.jpg.",
+      "message": "Referenced file does not exist: images/missing.jpg. Location: sensors/camera_front.csv:2. Fix: fix the relative path so it resolves inside the dataset root.",
       "metadata": {
-        "path": "images/missing.jpg"
+        "path": "images/missing.jpg",
+        "suggestion": "fix the relative path so it resolves inside the dataset root."
       },
       "row": 2,
       "severity": "error"
@@ -125,9 +132,10 @@
     {
       "check_name": "check_broken_paths",
       "file": "sensors/camera_front.csv",
-      "message": "Referenced file does not exist: images/also_missing.jpg.",
+      "message": "Referenced file does not exist: images/also_missing.jpg. Location: sensors/camera_front.csv:3. Fix: fix the relative path so it resolves inside the dataset root.",
       "metadata": {
-        "path": "images/also_missing.jpg"
+        "path": "images/also_missing.jpg",
+        "suggestion": "fix the relative path so it resolves inside the dataset root."
       },
       "row": 3,
       "severity": "error"
@@ -135,9 +143,10 @@
     {
       "check_name": "check_broken_paths",
       "file": "sensors/camera_front.csv",
-      "message": "Referenced file does not exist: images/000003.jpg.",
+      "message": "Referenced file does not exist: images/000003.jpg. Location: sensors/camera_front.csv:4. Fix: fix the relative path so it resolves inside the dataset root.",
       "metadata": {
-        "path": "images/000003.jpg"
+        "path": "images/000003.jpg",
+        "suggestion": "fix the relative path so it resolves inside the dataset root."
       },
       "row": 4,
       "severity": "error"
@@ -145,9 +154,10 @@
     {
       "check_name": "check_declared_sensors_exist",
       "file": "metadata.json",
-      "message": "Declared sensor 'gps' has no matching CSV in sensors/.",
+      "message": "Declared sensor 'gps' has no matching CSV in sensors/. Location: metadata.json. Fix: add declared sensor CSVs or remove stale metadata entries.",
       "metadata": {
-        "sensor": "gps"
+        "sensor": "gps",
+        "suggestion": "add declared sensor CSVs or remove stale metadata entries."
       },
       "row": null,
       "severity": "error"
@@ -155,10 +165,11 @@
     {
       "check_name": "check_duration_matches_timestamps",
       "file": "metadata.json",
-      "message": "metadata duration_sec does not match observed timestamp span.",
+      "message": "metadata duration_sec does not match observed timestamp span. Location: metadata.json. Fix: recompute duration from timestamps or trim streams.",
       "metadata": {
         "declared_duration_sec": 10.0,
-        "observed_duration_sec": 30.1
+        "observed_duration_sec": 30.1,
+        "suggestion": "recompute duration from timestamps or trim streams."
       },
       "row": null,
       "severity": "warning"
@@ -166,16 +177,19 @@
     {
       "check_name": "check_dataset_version_present",
       "file": "metadata.json",
-      "message": "metadata.json should include a non-empty version string.",
-      "metadata": {},
+      "message": "metadata.json should include a non-empty version string. Location: metadata.json. Fix: add a dataset version field to metadata.json.",
+      "metadata": {
+        "suggestion": "add a dataset version field to metadata.json."
+      },
       "row": null,
       "severity": "warning"
     },
     {
       "check_name": "check_duplicate_timestamps",
       "file": "sensors/camera_front.csv",
-      "message": "Duplicate timestamp.",
+      "message": "Duplicate timestamp. Location: sensors/camera_front.csv:3. Fix: deduplicate rows or add unique frame timestamps.",
       "metadata": {
+        "suggestion": "deduplicate rows or add unique frame timestamps.",
         "timestamp": 0.0
       },
       "row": 3,
@@ -184,9 +198,10 @@
     {
       "check_name": "check_large_timestamp_gaps",
       "file": "sensors/camera_front.csv",
-      "message": "Timestamp gap exceeds 0.500s.",
+      "message": "Timestamp gap exceeds 0.500s. Location: sensors/camera_front.csv:4. Fix: inspect dropped frames, logging stalls, or the threshold.",
       "metadata": {
         "gap_sec": 2.0,
+        "suggestion": "inspect dropped frames, logging stalls, or the threshold.",
         "threshold_sec": 0.5
       },
       "row": 4,
@@ -195,9 +210,10 @@
     {
       "check_name": "check_sensor_dimensions",
       "file": "sensors/camera_front.csv",
-      "message": "Camera width and height must be positive numbers.",
+      "message": "Camera width and height must be positive numbers. Location: sensors/camera_front.csv:3. Fix: fix non-positive or non-numeric camera width and height values.",
       "metadata": {
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "fix non-positive or non-numeric camera width and height values."
       },
       "row": 3,
       "severity": "error"
@@ -205,11 +221,12 @@
     {
       "check_name": "check_sensor_frequency",
       "file": "sensors/camera_front.csv",
-      "message": "Observed sensor rate differs from expected rate.",
+      "message": "Observed sensor rate differs from expected rate. Location: sensors/camera_front.csv. Fix: update expected_sensor_rates or inspect dropped samples.",
       "metadata": {
         "expected_hz": 10.0,
         "observed_hz": 0.5,
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "update expected_sensor_rates or inspect dropped samples."
       },
       "row": null,
       "severity": "warning"
@@ -217,11 +234,12 @@
     {
       "check_name": "check_missing_frames",
       "file": "sensors/camera_front.csv",
-      "message": "Likely missing frame based on timestamp gap.",
+      "message": "Likely missing frame based on timestamp gap. Location: sensors/camera_front.csv:4. Fix: inspect the gap and regenerate the sensor index if needed.",
       "metadata": {
         "expected_gap_sec": 0.1,
         "gap_sec": 2.0,
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "inspect the gap and regenerate the sensor index if needed."
       },
       "row": 4,
       "severity": "warning"
@@ -229,7 +247,7 @@
     {
       "check_name": "check_sensor_time_overlap",
       "file": null,
-      "message": "Sensor timestamp ranges do not overlap; align sensor streams before training.",
+      "message": "Sensor timestamp ranges do not overlap; align sensor streams before training. Fix: trim streams to a shared time window or correct clock offsets.",
       "metadata": {
         "sensors": {
           "camera_front": {
@@ -250,7 +268,8 @@
             "median_dt_sec": 0.010000000000001563,
             "start_time": 20.0
           }
-        }
+        },
+        "suggestion": "trim streams to a shared time window or correct clock offsets."
       },
       "row": null,
       "severity": "error"
@@ -258,11 +277,12 @@
     {
       "check_name": "check_timestamp_offset",
       "file": null,
-      "message": "Sensor stream start times differ more than configured.",
+      "message": "Sensor stream start times differ more than configured. Fix: align stream start times or correct sensor clock synchronization.",
       "metadata": {
         "sensor_a": "camera_front",
         "sensor_b": "imu",
         "start_offset_sec": 20.0,
+        "suggestion": "align stream start times or correct sensor clock synchronization.",
         "threshold_sec": 0.05
       },
       "row": null,
@@ -271,12 +291,13 @@
     {
       "check_name": "check_pairwise_sync_gap",
       "file": null,
-      "message": "Pairwise sensor timestamp gap exceeds configured median threshold.",
+      "message": "Pairwise sensor timestamp gap exceeds configured median threshold. Fix: resync the sensors or tune max_pairwise_sync_gap_sec.",
       "metadata": {
         "max_gap_sec": 18.01,
         "median_gap_sec": 18.005000000000003,
         "sensor_a": "camera_front",
         "sensor_b": "imu",
+        "suggestion": "resync the sensors or tune max_pairwise_sync_gap_sec.",
         "threshold_sec": 0.05
       },
       "row": null,
@@ -285,9 +306,10 @@
     {
       "check_name": "check_calibration_exists",
       "file": "calibration.json",
-      "message": "Missing calibration entry for sensor 'imu'.",
+      "message": "Missing calibration entry for sensor 'imu'. Location: calibration.json. Fix: add calibration.json or disable calibration checks.",
       "metadata": {
-        "sensor": "imu"
+        "sensor": "imu",
+        "suggestion": "add calibration.json or disable calibration checks."
       },
       "row": null,
       "severity": "error"
@@ -295,9 +317,10 @@
     {
       "check_name": "check_calibration_exists",
       "file": "calibration.json",
-      "message": "Missing calibration entry for sensor 'gps'.",
+      "message": "Missing calibration entry for sensor 'gps'. Location: calibration.json. Fix: add calibration.json or disable calibration checks.",
       "metadata": {
-        "sensor": "gps"
+        "sensor": "gps",
+        "suggestion": "add calibration.json or disable calibration checks."
       },
       "row": null,
       "severity": "error"
@@ -305,9 +328,10 @@
     {
       "check_name": "check_intrinsics_shape",
       "file": "calibration.json",
-      "message": "Calibration intrinsics for 'camera_front' must be a 3x3 matrix.",
+      "message": "Calibration intrinsics for 'camera_front' must be a 3x3 matrix. Location: calibration.json. Fix: write camera intrinsics as numeric 3x3 matrices.",
       "metadata": {
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "write camera intrinsics as numeric 3x3 matrices."
       },
       "row": null,
       "severity": "error"
@@ -315,9 +339,10 @@
     {
       "check_name": "check_extrinsics_shape",
       "file": "calibration.json",
-      "message": "Calibration extrinsics for 'camera_front' must include translation[3] and rotation_quat[4].",
+      "message": "Calibration extrinsics for 'camera_front' must include translation[3] and rotation_quat[4]. Location: calibration.json. Fix: write sensor extrinsics as numeric 4x4 matrices.",
       "metadata": {
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "write sensor extrinsics as numeric 4x4 matrices."
       },
       "row": null,
       "severity": "error"
@@ -325,10 +350,11 @@
     {
       "check_name": "check_quaternion_norm",
       "file": "calibration.json",
-      "message": "Quaternion for 'camera_front' is not normalized.",
+      "message": "Quaternion for 'camera_front' is not normalized. Location: calibration.json. Fix: normalize quaternions or regenerate calibration.",
       "metadata": {
         "norm": 2.0,
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "normalize quaternions or regenerate calibration."
       },
       "row": null,
       "severity": "error"
@@ -336,26 +362,19 @@
     {
       "check_name": "check_label_confidence_range",
       "file": "labels/detections.csv",
-      "message": "Label confidence must be in [0, 1].",
-      "metadata": {},
+      "message": "Label confidence must be in [0, 1]. Location: labels/detections.csv:2. Fix: clamp confidence values to [0, 1] or fix the label exporter.",
+      "metadata": {
+        "suggestion": "clamp confidence values to [0, 1] or fix the label exporter."
+      },
       "row": 2,
       "severity": "error"
     },
     {
       "check_name": "check_label_geometry",
       "file": "labels/detections.csv",
-      "message": "Label width and height must be positive.",
-      "metadata": {},
-      "row": 2,
-      "severity": "error"
-    },
-    {
-      "check_name": "check_label_timestamps_match_sensor_range",
-      "file": "labels/detections.csv",
-      "message": "Label timestamp is outside the observed sensor timestamp range.",
+      "message": "Label width and height must be positive. Location: labels/detections.csv:2. Fix: fix non-positive bounding-box width or height values.",
       "metadata": {
-        "max_sensor_time": 20.01,
-        "min_sensor_time": 0.0
+        "suggestion": "fix non-positive bounding-box width or height values."
       },
       "row": 2,
       "severity": "error"
@@ -363,10 +382,23 @@
     {
       "check_name": "check_label_timestamps_match_sensor_range",
       "file": "labels/detections.csv",
-      "message": "Label timestamp is outside the observed sensor timestamp range.",
+      "message": "Label timestamp is outside the observed sensor timestamp range. Location: labels/detections.csv:2. Fix: drop out-of-range labels or add sensor rows.",
       "metadata": {
         "max_sensor_time": 20.01,
-        "min_sensor_time": 0.0
+        "min_sensor_time": 0.0,
+        "suggestion": "drop out-of-range labels or add sensor rows."
+      },
+      "row": 2,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_label_timestamps_match_sensor_range",
+      "file": "labels/detections.csv",
+      "message": "Label timestamp is outside the observed sensor timestamp range. Location: labels/detections.csv:3. Fix: drop out-of-range labels or add sensor rows.",
+      "metadata": {
+        "max_sensor_time": 20.01,
+        "min_sensor_time": 0.0,
+        "suggestion": "drop out-of-range labels or add sensor rows."
       },
       "row": 3,
       "severity": "error"
@@ -374,13 +406,14 @@
     {
       "check_name": "check_track_id_consistency",
       "file": "labels/detections.csv",
-      "message": "Track ID changes class more often than configured.",
+      "message": "Track ID changes class more often than configured. Location: labels/detections.csv. Fix: split reused track IDs or correct class labels.",
       "metadata": {
         "class_switches": 1,
         "classes": [
           "car",
           "pedestrian"
         ],
+        "suggestion": "split reused track IDs or correct class labels.",
         "threshold": 0,
         "track_id": "track-1"
       },
@@ -390,9 +423,10 @@
     {
       "check_name": "check_short_tracks",
       "file": "labels/detections.csv",
-      "message": "Track is shorter than configured minimum length.",
+      "message": "Track is shorter than configured minimum length. Location: labels/detections.csv. Fix: remove one-off tracks or lower label_min_track_length deliberately.",
       "metadata": {
         "minimum_track_length": 3,
+        "suggestion": "remove one-off tracks or lower label_min_track_length deliberately.",
         "track_id": "track-1",
         "track_length": 2
       },
@@ -402,10 +436,11 @@
     {
       "check_name": "check_unrealistic_speed",
       "file": "trajectories/ego.csv",
-      "message": "Trajectory speed exceeds configured maximum.",
+      "message": "Trajectory speed exceeds configured maximum. Location: trajectories/ego.csv:3. Fix: verify units/timestamps or raise max_speed_mps.",
       "metadata": {
         "max_speed_mps": 70.0,
-        "speed_mps": 100.0
+        "speed_mps": 100.0,
+        "suggestion": "verify units/timestamps or raise max_speed_mps."
       },
       "row": 3,
       "severity": "warning"
@@ -413,10 +448,11 @@
     {
       "check_name": "check_unrealistic_acceleration",
       "file": "trajectories/ego.csv",
-      "message": "Trajectory acceleration exceeds configured maximum.",
+      "message": "Trajectory acceleration exceeds configured maximum. Location: trajectories/ego.csv:3. Fix: verify units/timestamps or raise max_accel_mps2.",
       "metadata": {
         "acceleration_mps2": 900.0,
-        "max_accel_mps2": 12.0
+        "max_accel_mps2": 12.0,
+        "suggestion": "verify units/timestamps or raise max_accel_mps2."
       },
       "row": 3,
       "severity": "warning"
@@ -424,10 +460,11 @@
     {
       "check_name": "check_unrealistic_acceleration",
       "file": "trajectories/ego.csv",
-      "message": "Trajectory acceleration exceeds configured maximum.",
+      "message": "Trajectory acceleration exceeds configured maximum. Location: trajectories/ego.csv:4. Fix: verify units/timestamps or raise max_accel_mps2.",
       "metadata": {
         "acceleration_mps2": -900.0,
-        "max_accel_mps2": 12.0
+        "max_accel_mps2": 12.0,
+        "suggestion": "verify units/timestamps or raise max_accel_mps2."
       },
       "row": 4,
       "severity": "warning"
@@ -435,20 +472,23 @@
     {
       "check_name": "check_yaw_range",
       "file": "trajectories/ego.csv",
-      "message": "Yaw should be in [-pi, pi].",
-      "metadata": {},
+      "message": "Yaw should be in [-pi, pi]. Location: trajectories/ego.csv:3. Fix: normalize yaw values into radians within [-pi, pi].",
+      "metadata": {
+        "suggestion": "normalize yaw values into radians within [-pi, pi]."
+      },
       "row": 3,
       "severity": "warning"
     }
   ],
-  "generated_at": "2026-06-29T14:09:59+00:00",
+  "generated_at": "2026-06-30T19:22:24+00:00",
   "issues": [
     {
       "check_name": "check_missing_sensor_files",
       "file": "sensors/gps.csv",
-      "message": "Metadata declares sensor 'gps', but sensors/gps.csv is missing.",
+      "message": "Metadata declares sensor 'gps', but sensors/gps.csv is missing. Location: sensors/gps.csv. Fix: add the sensor CSV or remove the stale declaration.",
       "metadata": {
-        "sensor": "gps"
+        "sensor": "gps",
+        "suggestion": "add the sensor CSV or remove the stale declaration."
       },
       "row": null,
       "severity": "error"
@@ -456,9 +496,10 @@
     {
       "check_name": "check_broken_paths",
       "file": "sensors/camera_front.csv",
-      "message": "Referenced file does not exist: images/missing.jpg.",
+      "message": "Referenced file does not exist: images/missing.jpg. Location: sensors/camera_front.csv:2. Fix: fix the relative path so it resolves inside the dataset root.",
       "metadata": {
-        "path": "images/missing.jpg"
+        "path": "images/missing.jpg",
+        "suggestion": "fix the relative path so it resolves inside the dataset root."
       },
       "row": 2,
       "severity": "error"
@@ -466,9 +507,10 @@
     {
       "check_name": "check_broken_paths",
       "file": "sensors/camera_front.csv",
-      "message": "Referenced file does not exist: images/also_missing.jpg.",
+      "message": "Referenced file does not exist: images/also_missing.jpg. Location: sensors/camera_front.csv:3. Fix: fix the relative path so it resolves inside the dataset root.",
       "metadata": {
-        "path": "images/also_missing.jpg"
+        "path": "images/also_missing.jpg",
+        "suggestion": "fix the relative path so it resolves inside the dataset root."
       },
       "row": 3,
       "severity": "error"
@@ -476,9 +518,10 @@
     {
       "check_name": "check_broken_paths",
       "file": "sensors/camera_front.csv",
-      "message": "Referenced file does not exist: images/000003.jpg.",
+      "message": "Referenced file does not exist: images/000003.jpg. Location: sensors/camera_front.csv:4. Fix: fix the relative path so it resolves inside the dataset root.",
       "metadata": {
-        "path": "images/000003.jpg"
+        "path": "images/000003.jpg",
+        "suggestion": "fix the relative path so it resolves inside the dataset root."
       },
       "row": 4,
       "severity": "error"
@@ -486,9 +529,10 @@
     {
       "check_name": "check_declared_sensors_exist",
       "file": "metadata.json",
-      "message": "Declared sensor 'gps' has no matching CSV in sensors/.",
+      "message": "Declared sensor 'gps' has no matching CSV in sensors/. Location: metadata.json. Fix: add declared sensor CSVs or remove stale metadata entries.",
       "metadata": {
-        "sensor": "gps"
+        "sensor": "gps",
+        "suggestion": "add declared sensor CSVs or remove stale metadata entries."
       },
       "row": null,
       "severity": "error"
@@ -496,10 +540,11 @@
     {
       "check_name": "check_duration_matches_timestamps",
       "file": "metadata.json",
-      "message": "metadata duration_sec does not match observed timestamp span.",
+      "message": "metadata duration_sec does not match observed timestamp span. Location: metadata.json. Fix: recompute duration from timestamps or trim streams.",
       "metadata": {
         "declared_duration_sec": 10.0,
-        "observed_duration_sec": 30.1
+        "observed_duration_sec": 30.1,
+        "suggestion": "recompute duration from timestamps or trim streams."
       },
       "row": null,
       "severity": "warning"
@@ -507,16 +552,19 @@
     {
       "check_name": "check_dataset_version_present",
       "file": "metadata.json",
-      "message": "metadata.json should include a non-empty version string.",
-      "metadata": {},
+      "message": "metadata.json should include a non-empty version string. Location: metadata.json. Fix: add a dataset version field to metadata.json.",
+      "metadata": {
+        "suggestion": "add a dataset version field to metadata.json."
+      },
       "row": null,
       "severity": "warning"
     },
     {
       "check_name": "check_duplicate_timestamps",
       "file": "sensors/camera_front.csv",
-      "message": "Duplicate timestamp.",
+      "message": "Duplicate timestamp. Location: sensors/camera_front.csv:3. Fix: deduplicate rows or add unique frame timestamps.",
       "metadata": {
+        "suggestion": "deduplicate rows or add unique frame timestamps.",
         "timestamp": 0.0
       },
       "row": 3,
@@ -525,9 +573,10 @@
     {
       "check_name": "check_large_timestamp_gaps",
       "file": "sensors/camera_front.csv",
-      "message": "Timestamp gap exceeds 0.500s.",
+      "message": "Timestamp gap exceeds 0.500s. Location: sensors/camera_front.csv:4. Fix: inspect dropped frames, logging stalls, or the threshold.",
       "metadata": {
         "gap_sec": 2.0,
+        "suggestion": "inspect dropped frames, logging stalls, or the threshold.",
         "threshold_sec": 0.5
       },
       "row": 4,
@@ -536,9 +585,10 @@
     {
       "check_name": "check_sensor_dimensions",
       "file": "sensors/camera_front.csv",
-      "message": "Camera width and height must be positive numbers.",
+      "message": "Camera width and height must be positive numbers. Location: sensors/camera_front.csv:3. Fix: fix non-positive or non-numeric camera width and height values.",
       "metadata": {
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "fix non-positive or non-numeric camera width and height values."
       },
       "row": 3,
       "severity": "error"
@@ -546,11 +596,12 @@
     {
       "check_name": "check_sensor_frequency",
       "file": "sensors/camera_front.csv",
-      "message": "Observed sensor rate differs from expected rate.",
+      "message": "Observed sensor rate differs from expected rate. Location: sensors/camera_front.csv. Fix: update expected_sensor_rates or inspect dropped samples.",
       "metadata": {
         "expected_hz": 10.0,
         "observed_hz": 0.5,
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "update expected_sensor_rates or inspect dropped samples."
       },
       "row": null,
       "severity": "warning"
@@ -558,11 +609,12 @@
     {
       "check_name": "check_missing_frames",
       "file": "sensors/camera_front.csv",
-      "message": "Likely missing frame based on timestamp gap.",
+      "message": "Likely missing frame based on timestamp gap. Location: sensors/camera_front.csv:4. Fix: inspect the gap and regenerate the sensor index if needed.",
       "metadata": {
         "expected_gap_sec": 0.1,
         "gap_sec": 2.0,
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "inspect the gap and regenerate the sensor index if needed."
       },
       "row": 4,
       "severity": "warning"
@@ -570,7 +622,7 @@
     {
       "check_name": "check_sensor_time_overlap",
       "file": null,
-      "message": "Sensor timestamp ranges do not overlap; align sensor streams before training.",
+      "message": "Sensor timestamp ranges do not overlap; align sensor streams before training. Fix: trim streams to a shared time window or correct clock offsets.",
       "metadata": {
         "sensors": {
           "camera_front": {
@@ -591,7 +643,8 @@
             "median_dt_sec": 0.010000000000001563,
             "start_time": 20.0
           }
-        }
+        },
+        "suggestion": "trim streams to a shared time window or correct clock offsets."
       },
       "row": null,
       "severity": "error"
@@ -599,11 +652,12 @@
     {
       "check_name": "check_timestamp_offset",
       "file": null,
-      "message": "Sensor stream start times differ more than configured.",
+      "message": "Sensor stream start times differ more than configured. Fix: align stream start times or correct sensor clock synchronization.",
       "metadata": {
         "sensor_a": "camera_front",
         "sensor_b": "imu",
         "start_offset_sec": 20.0,
+        "suggestion": "align stream start times or correct sensor clock synchronization.",
         "threshold_sec": 0.05
       },
       "row": null,
@@ -612,12 +666,13 @@
     {
       "check_name": "check_pairwise_sync_gap",
       "file": null,
-      "message": "Pairwise sensor timestamp gap exceeds configured median threshold.",
+      "message": "Pairwise sensor timestamp gap exceeds configured median threshold. Fix: resync the sensors or tune max_pairwise_sync_gap_sec.",
       "metadata": {
         "max_gap_sec": 18.01,
         "median_gap_sec": 18.005000000000003,
         "sensor_a": "camera_front",
         "sensor_b": "imu",
+        "suggestion": "resync the sensors or tune max_pairwise_sync_gap_sec.",
         "threshold_sec": 0.05
       },
       "row": null,
@@ -626,9 +681,10 @@
     {
       "check_name": "check_calibration_exists",
       "file": "calibration.json",
-      "message": "Missing calibration entry for sensor 'imu'.",
+      "message": "Missing calibration entry for sensor 'imu'. Location: calibration.json. Fix: add calibration.json or disable calibration checks.",
       "metadata": {
-        "sensor": "imu"
+        "sensor": "imu",
+        "suggestion": "add calibration.json or disable calibration checks."
       },
       "row": null,
       "severity": "error"
@@ -636,9 +692,10 @@
     {
       "check_name": "check_calibration_exists",
       "file": "calibration.json",
-      "message": "Missing calibration entry for sensor 'gps'.",
+      "message": "Missing calibration entry for sensor 'gps'. Location: calibration.json. Fix: add calibration.json or disable calibration checks.",
       "metadata": {
-        "sensor": "gps"
+        "sensor": "gps",
+        "suggestion": "add calibration.json or disable calibration checks."
       },
       "row": null,
       "severity": "error"
@@ -646,9 +703,10 @@
     {
       "check_name": "check_intrinsics_shape",
       "file": "calibration.json",
-      "message": "Calibration intrinsics for 'camera_front' must be a 3x3 matrix.",
+      "message": "Calibration intrinsics for 'camera_front' must be a 3x3 matrix. Location: calibration.json. Fix: write camera intrinsics as numeric 3x3 matrices.",
       "metadata": {
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "write camera intrinsics as numeric 3x3 matrices."
       },
       "row": null,
       "severity": "error"
@@ -656,9 +714,10 @@
     {
       "check_name": "check_extrinsics_shape",
       "file": "calibration.json",
-      "message": "Calibration extrinsics for 'camera_front' must include translation[3] and rotation_quat[4].",
+      "message": "Calibration extrinsics for 'camera_front' must include translation[3] and rotation_quat[4]. Location: calibration.json. Fix: write sensor extrinsics as numeric 4x4 matrices.",
       "metadata": {
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "write sensor extrinsics as numeric 4x4 matrices."
       },
       "row": null,
       "severity": "error"
@@ -666,10 +725,11 @@
     {
       "check_name": "check_quaternion_norm",
       "file": "calibration.json",
-      "message": "Quaternion for 'camera_front' is not normalized.",
+      "message": "Quaternion for 'camera_front' is not normalized. Location: calibration.json. Fix: normalize quaternions or regenerate calibration.",
       "metadata": {
         "norm": 2.0,
-        "sensor": "camera_front"
+        "sensor": "camera_front",
+        "suggestion": "normalize quaternions or regenerate calibration."
       },
       "row": null,
       "severity": "error"
@@ -677,26 +737,19 @@
     {
       "check_name": "check_label_confidence_range",
       "file": "labels/detections.csv",
-      "message": "Label confidence must be in [0, 1].",
-      "metadata": {},
+      "message": "Label confidence must be in [0, 1]. Location: labels/detections.csv:2. Fix: clamp confidence values to [0, 1] or fix the label exporter.",
+      "metadata": {
+        "suggestion": "clamp confidence values to [0, 1] or fix the label exporter."
+      },
       "row": 2,
       "severity": "error"
     },
     {
       "check_name": "check_label_geometry",
       "file": "labels/detections.csv",
-      "message": "Label width and height must be positive.",
-      "metadata": {},
-      "row": 2,
-      "severity": "error"
-    },
-    {
-      "check_name": "check_label_timestamps_match_sensor_range",
-      "file": "labels/detections.csv",
-      "message": "Label timestamp is outside the observed sensor timestamp range.",
+      "message": "Label width and height must be positive. Location: labels/detections.csv:2. Fix: fix non-positive bounding-box width or height values.",
       "metadata": {
-        "max_sensor_time": 20.01,
-        "min_sensor_time": 0.0
+        "suggestion": "fix non-positive bounding-box width or height values."
       },
       "row": 2,
       "severity": "error"
@@ -704,10 +757,23 @@
     {
       "check_name": "check_label_timestamps_match_sensor_range",
       "file": "labels/detections.csv",
-      "message": "Label timestamp is outside the observed sensor timestamp range.",
+      "message": "Label timestamp is outside the observed sensor timestamp range. Location: labels/detections.csv:2. Fix: drop out-of-range labels or add sensor rows.",
       "metadata": {
         "max_sensor_time": 20.01,
-        "min_sensor_time": 0.0
+        "min_sensor_time": 0.0,
+        "suggestion": "drop out-of-range labels or add sensor rows."
+      },
+      "row": 2,
+      "severity": "error"
+    },
+    {
+      "check_name": "check_label_timestamps_match_sensor_range",
+      "file": "labels/detections.csv",
+      "message": "Label timestamp is outside the observed sensor timestamp range. Location: labels/detections.csv:3. Fix: drop out-of-range labels or add sensor rows.",
+      "metadata": {
+        "max_sensor_time": 20.01,
+        "min_sensor_time": 0.0,
+        "suggestion": "drop out-of-range labels or add sensor rows."
       },
       "row": 3,
       "severity": "error"
@@ -715,13 +781,14 @@
     {
       "check_name": "check_track_id_consistency",
       "file": "labels/detections.csv",
-      "message": "Track ID changes class more often than configured.",
+      "message": "Track ID changes class more often than configured. Location: labels/detections.csv. Fix: split reused track IDs or correct class labels.",
       "metadata": {
         "class_switches": 1,
         "classes": [
           "car",
           "pedestrian"
         ],
+        "suggestion": "split reused track IDs or correct class labels.",
         "threshold": 0,
         "track_id": "track-1"
       },
@@ -731,9 +798,10 @@
     {
       "check_name": "check_short_tracks",
       "file": "labels/detections.csv",
-      "message": "Track is shorter than configured minimum length.",
+      "message": "Track is shorter than configured minimum length. Location: labels/detections.csv. Fix: remove one-off tracks or lower label_min_track_length deliberately.",
       "metadata": {
         "minimum_track_length": 3,
+        "suggestion": "remove one-off tracks or lower label_min_track_length deliberately.",
         "track_id": "track-1",
         "track_length": 2
       },
@@ -743,10 +811,11 @@
     {
       "check_name": "check_unrealistic_speed",
       "file": "trajectories/ego.csv",
-      "message": "Trajectory speed exceeds configured maximum.",
+      "message": "Trajectory speed exceeds configured maximum. Location: trajectories/ego.csv:3. Fix: verify units/timestamps or raise max_speed_mps.",
       "metadata": {
         "max_speed_mps": 70.0,
-        "speed_mps": 100.0
+        "speed_mps": 100.0,
+        "suggestion": "verify units/timestamps or raise max_speed_mps."
       },
       "row": 3,
       "severity": "warning"
@@ -754,10 +823,11 @@
     {
       "check_name": "check_unrealistic_acceleration",
       "file": "trajectories/ego.csv",
-      "message": "Trajectory acceleration exceeds configured maximum.",
+      "message": "Trajectory acceleration exceeds configured maximum. Location: trajectories/ego.csv:3. Fix: verify units/timestamps or raise max_accel_mps2.",
       "metadata": {
         "acceleration_mps2": 900.0,
-        "max_accel_mps2": 12.0
+        "max_accel_mps2": 12.0,
+        "suggestion": "verify units/timestamps or raise max_accel_mps2."
       },
       "row": 3,
       "severity": "warning"
@@ -765,10 +835,11 @@
     {
       "check_name": "check_unrealistic_acceleration",
       "file": "trajectories/ego.csv",
-      "message": "Trajectory acceleration exceeds configured maximum.",
+      "message": "Trajectory acceleration exceeds configured maximum. Location: trajectories/ego.csv:4. Fix: verify units/timestamps or raise max_accel_mps2.",
       "metadata": {
         "acceleration_mps2": -900.0,
-        "max_accel_mps2": 12.0
+        "max_accel_mps2": 12.0,
+        "suggestion": "verify units/timestamps or raise max_accel_mps2."
       },
       "row": 4,
       "severity": "warning"
@@ -776,8 +847,10 @@
     {
       "check_name": "check_yaw_range",
       "file": "trajectories/ego.csv",
-      "message": "Yaw should be in [-pi, pi].",
-      "metadata": {},
+      "message": "Yaw should be in [-pi, pi]. Location: trajectories/ego.csv:3. Fix: normalize yaw values into radians within [-pi, pi].",
+      "metadata": {
+        "suggestion": "normalize yaw values into radians within [-pi, pi]."
+      },
       "row": 3,
       "severity": "warning"
     }

@@ -64,6 +64,8 @@ Each issue includes:
 - `metadata`
 
 Rows are 1-based CSV rows. The header is row 1 and the first data row is row 2.
+Native lint issues include `metadata.suggestion` when DatasetLint has a concrete
+fix hint for the rule.
 
 The committed JSON schema is `schemas/report.schema.json`.
 

@@ -2,7 +2,7 @@
 
 The native DatasetLint format is a local folder with JSON metadata and calibration plus CSV data files.
 
-Use this format when you want to run the full `datasetlint lint` rule engine. Use [Adapters](adapters.md) when you want to inspect COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, Hugging Face, or generic folder layouts without converting them first.
+Use this format when you want to run the full `datasetlint lint` rule engine. Use [Adapters](adapters.md) when you want to inspect generic folders, COCO, KITTI, Argoverse 2, LeRobot, nuScenes, Waymo, ROS bag, MCAP, Hugging Face, or plugin-provided layouts without converting them first.
 
 ## Layout
 

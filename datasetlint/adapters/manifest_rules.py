@@ -11,6 +11,7 @@ from typing import Any
 from datasetlint.adapters.base import DatasetManifest, FrameRecord, SensorStream
 
 MAX_PAIRWISE_SYNC_GAP_SEC = 0.05
+SYNC_GAP_EPSILON_SEC = 1e-6
 LARGE_TIMESTAMP_GAP_SEC = 1.0
 CALIBRATION_EXPECTED_ADAPTERS = {"folder", "kitti", "nuscenes", "waymo"}
 ANNOTATION_FRAME_LINK_ADAPTERS = {"coco", "folder", "generic", "kitti", "waymo"}
@@ -126,10 +127,18 @@ def _check_sensor_links(
             )
     for sensor in sensors:
         observed = frames_by_sensor.get(sensor.sensor_id)
+        if observed is None:
+            result.warnings.append(
+                f"Sensor/topic {sensor.sensor_id} has no decoded frame or message records. "
+                "Location: manifest sensor stream. Fix: inspect the source log for dropped "
+                "topics or raise the adapter max_rows limit if sampling truncated the stream."
+            )
         if observed and sensor.frame_count is not None and observed != sensor.frame_count:
             result.warnings.append(
                 f"Sensor {sensor.sensor_id} declares {sensor.frame_count} frames, "
-                f"but common manifest records contain {observed}."
+                f"but common manifest records contain {observed}. "
+                "Location: manifest sensor/frame records. Fix: regenerate the manifest or "
+                "inspect dropped messages for this sensor."
             )
 
 
@@ -151,26 +160,47 @@ def _check_timestamps(frames: list[FrameRecord], result: ManifestRuleResult) -> 
         }
         duplicate_count = len(values) - len(set(values))
         if duplicate_count:
+            first_duplicate = next(
+                (
+                    (frame_index, timestamp)
+                    for frame_index, timestamp in indexed_values
+                    if values.count(timestamp) > 1
+                ),
+                (indexed_values[0][0], indexed_values[0][1]),
+            )
             result.warnings.append(
-                f"Sensor {sensor_id} has {duplicate_count} duplicate timestamp(s)."
+                f"Sensor/topic {sensor_id} has {duplicate_count} duplicate timestamp(s); "
+                f"first duplicate is at manifest frame index {first_duplicate[0]} "
+                f"timestamp {first_duplicate[1]:.9g}. Fix: deduplicate messages or correct "
+                "the source clock before training."
             )
         ordered_values = [value for _, value in sorted(indexed_values)]
-        if any(
-            ordered_values[index] > ordered_values[index + 1]
-            for index in range(len(ordered_values) - 1)
-        ):
-            result.errors.append(f"Sensor {sensor_id} has non-monotonic timestamps.")
+        ordered_indices = [frame_index for frame_index, _ in sorted(indexed_values)]
+        for index in range(len(ordered_values) - 1):
+            if ordered_values[index] > ordered_values[index + 1]:
+                result.errors.append(
+                    f"Sensor/topic {sensor_id} has non-monotonic timestamps between "
+                    f"manifest frame indices {ordered_indices[index]} and "
+                    f"{ordered_indices[index + 1]} "
+                    f"({ordered_values[index]:.9g} > {ordered_values[index + 1]:.9g}). "
+                    "Fix: sort the stream by timestamp or investigate source clock resets."
+                )
+                break
         sorted_values = sorted(set(values))
         gaps = [
-            sorted_values[index + 1] - sorted_values[index]
+            (index, sorted_values[index + 1] - sorted_values[index])
             for index in range(len(sorted_values) - 1)
         ]
-        large_gaps = [gap for gap in gaps if gap > LARGE_TIMESTAMP_GAP_SEC]
+        large_gaps = [item for item in gaps if item[1] > LARGE_TIMESTAMP_GAP_SEC]
         if large_gaps:
+            max_index, max_gap = max(large_gaps, key=lambda item: item[1])
             result.warnings.append(
-                f"Sensor {sensor_id} has timestamp gap {max(large_gaps):.6g}s."
+                f"Sensor/topic {sensor_id} has timestamp gap {max_gap:.6g}s between "
+                f"timestamps {sorted_values[max_index]:.9g} and "
+                f"{sorted_values[max_index + 1]:.9g}. Fix: inspect dropped messages, "
+                "paused logging, or an incorrect timestamp unit in this stream."
             )
-            timestamp_stats[sensor_id]["max_gap_sec"] = max(large_gaps)
+            timestamp_stats[sensor_id]["max_gap_sec"] = max_gap
     result.stats["timestamp_streams"] = timestamp_stats
     _check_sync(groups, result)
 
@@ -197,7 +227,10 @@ def _check_sync(
             pair_name = f"{left_sensor}:{right_sensor}"
             if overlap_start > overlap_end:
                 result.warnings.append(
-                    f"Sensors {left_sensor} and {right_sensor} have no timestamp overlap."
+                    f"Sensors/topics {left_sensor} and {right_sensor} have no timestamp "
+                    f"overlap ({left_sensor}: {left[0]:.9g}-{left[-1]:.9g}, "
+                    f"{right_sensor}: {right[0]:.9g}-{right[-1]:.9g}). "
+                    "Fix: trim to a shared time window or correct sensor clock offsets."
                 )
                 sync_stats[pair_name] = {"overlap": False}
                 continue
@@ -209,10 +242,12 @@ def _check_sync(
                 "median_gap_sec": median_gap,
                 "max_gap_sec": max_gap,
             }
-            if median_gap > MAX_PAIRWISE_SYNC_GAP_SEC:
+            if median_gap - MAX_PAIRWISE_SYNC_GAP_SEC > SYNC_GAP_EPSILON_SEC:
                 result.warnings.append(
-                    f"Sensors {left_sensor} and {right_sensor} median sync gap "
-                    f"{median_gap:.6g}s exceeds {MAX_PAIRWISE_SYNC_GAP_SEC:.6g}s."
+                    f"Sensors/topics {left_sensor} and {right_sensor} median sync gap "
+                    f"{median_gap:.6g}s exceeds {MAX_PAIRWISE_SYNC_GAP_SEC:.6g}s "
+                    f"(max {max_gap:.6g}s). Fix: verify timestamp units, hardware clock "
+                    "sync, or topic alignment inside the bag/log."
                 )
     result.stats["sync_pairs"] = sync_stats
 

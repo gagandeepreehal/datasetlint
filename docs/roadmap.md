@@ -14,17 +14,16 @@ This roadmap separates planned work from implemented behavior. Do not treat thes
 ## Medium Term
 
 - Deeper semantic decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payloads, richer nuScenes payload semantics, and richer Hugging Face row schemas.
-- Additional dataset adapters such as Argoverse, BDD100K, SemanticKITTI, LeRobot/Open X-Embodiment, and RLDS/TFDS robotics datasets.
+- Additional dataset adapters such as BDD100K, SemanticKITTI, Open X-Embodiment, and RLDS/TFDS robotics datasets.
 - Richer sensor synchronization checks.
 - Richer static HTML report styling while keeping reports dependency-free.
-- Entry-point plugin discovery for third-party adapters.
 
 ## Long Term
 
 - Rule plugin system.
 - Benchmark sample datasets.
 - Large-dataset performance profiling.
-- More configurable validation policies.
+- Rule plugin system beyond config-file rule policy.
 - Optional machine-readable schema export.
 
 ## Non-Goals

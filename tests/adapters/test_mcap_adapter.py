@@ -99,3 +99,70 @@ def test_mcap_deep_parse_failure_is_invalid(monkeypatch):
 
     assert report.valid is False
     assert "Could not parse log.mcap" in report.errors[0]
+
+
+def test_mcap_deep_validation_reports_topic_desync(monkeypatch):
+    def fake_parse(dataset_root: Path, files: list[Path], *, max_messages: int):
+        return mcap_module._ParsedMCAP(
+            sequences=[
+                mcap_module.SequenceRecord(
+                    sequence_id="log",
+                    name="log.mcap",
+                    frame_count=4,
+                )
+            ],
+            frames=[
+                mcap_module.FrameRecord(
+                    frame_id="log:0",
+                    sequence_id="log",
+                    timestamp=1.0,
+                    sensor_id="/camera/image",
+                ),
+                mcap_module.FrameRecord(
+                    frame_id="log:1",
+                    sequence_id="log",
+                    timestamp=2.0,
+                    sensor_id="/camera/image",
+                ),
+                mcap_module.FrameRecord(
+                    frame_id="log:2",
+                    sequence_id="log",
+                    timestamp=1.2,
+                    sensor_id="/imu",
+                ),
+                mcap_module.FrameRecord(
+                    frame_id="log:3",
+                    sequence_id="log",
+                    timestamp=2.2,
+                    sensor_id="/imu",
+                ),
+            ],
+            sensors=[
+                mcap_module.SensorStream(
+                    sensor_id="/camera/image",
+                    sensor_type="camera",
+                    frame_count=2,
+                ),
+                mcap_module.SensorStream(
+                    sensor_id="/imu",
+                    sensor_type="imu",
+                    frame_count=2,
+                ),
+            ],
+            metadata={
+                "parse_mode": "deep",
+                "message_count": 4,
+                "channels": [{"id": 1, "topic": "/camera/image"}, {"id": 2, "topic": "/imu"}],
+                "schemas": [{"id": 1, "name": "sensor_msgs/Image"}],
+            },
+            limitations=["payloads not decoded"],
+        )
+
+    monkeypatch.setattr(mcap_module, "_parse_mcap_files", fake_parse)
+
+    report = MCAPAdapter().validate(FIXTURES / "mcap_index_only", deep=True)
+
+    assert any(
+        "/camera/image and /imu median sync gap" in warning and "Fix:" in warning
+        for warning in report.warnings
+    )

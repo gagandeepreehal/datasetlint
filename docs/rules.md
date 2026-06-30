@@ -109,4 +109,4 @@ timestamp, x, y, yaw, vx, vy
 
 ## Configuration
 
-Thresholds are documented in [Configuration](configuration.md). Validation issue severities are fixed in code except `issue_regression_severity`, which applies to diff regression classification.
+Thresholds, per-rule enable/disable, and per-rule severity overrides are documented in [Configuration](configuration.md). `issue_regression_severity` is separate and applies to diff regression classification.

@@ -10,15 +10,9 @@ Python callers can pass a config path, dictionary, or `LintConfig` object.
 
 ## Supported File Shape
 
-The config reader supports a simple YAML subset:
-
-- scalar `key: value` entries
-- one-level maps such as `expected_sensor_rates`
-- comments after `#`
-
-It does not support lists, anchors, multiline strings, or nested maps beyond one level.
-
-Unknown keys are rejected.
+Config files are parsed as YAML with PyYAML. Lists, nested maps, quoted strings,
+comments, anchors, and normal YAML scalar types are supported. Unknown keys are
+rejected so stale configs do not silently pass.
 
 ## Defaults
 
@@ -40,6 +34,10 @@ frequency_jitter_ratio: 0.2
 frame_count_drop_ratio_warning: 0.1
 duration_drop_ratio_warning: 0.1
 issue_regression_severity: warning
+rules:
+  enabled: null
+  disabled: []
+  severity: {}
 expected_sensor_rates:
   camera_front: 10.0
   camera_rear: 10.0
@@ -49,21 +47,43 @@ expected_sensor_rates:
 
 ## Rule Selection
 
-There is no config-file rule enable/disable system in v0.1. Use the CLI `--checks` option or Python `checks=` argument:
+Use `rules.enabled` to run only named groups or individual check functions. Use
+`rules.disabled` to remove noisy checks from whichever set would otherwise run.
+Names can be group names such as `calibration`, `labels`, and `sync`, or concrete
+check function names such as `check_sensor_frequency`.
+
+```yaml
+rules:
+  enabled:
+    - calibration
+    - labels
+  disabled:
+    - check_sensor_frequency
+```
+
+The CLI `--checks` option and Python `checks=` argument still work. When they are
+provided, they choose the base rule set and `rules.disabled` still removes checks
+from that base set.
 
 ```bash
 datasetlint examples/minimal_dataset --checks labels,sync
 ```
 
-```python
-from datasetlint import lint_dataset
-
-report = lint_dataset("examples/minimal_dataset", checks=["labels", "sync"])
-```
-
 ## Severity Overrides
 
-Validation severities are fixed in code in v0.1. The only configurable severity is `issue_regression_severity`, which controls how some diff regressions are classified.
+Use `rules.severity` to override native lint issue severity by check name. This
+is useful when CI should record a known issue without failing on it.
+
+```yaml
+rules:
+  severity:
+    check_large_timestamp_gaps: info
+    check_pairwise_sync_gap: warning
+```
+
+Overrides preserve the original severity in `issue.metadata.original_severity`.
+`issue_regression_severity` remains the separate setting for dataset diff
+regression classification.
 
 Use CLI failure thresholds to make warnings fail CI:
 

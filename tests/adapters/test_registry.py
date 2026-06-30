@@ -7,8 +7,10 @@ import pytest
 
 from datasetlint.adapters import (
     AdapterDetectionError,
+    DatasetAdapter,
     DatasetManifest,
     detect_adapter,
+    discover_entry_point_adapters,
     list_adapter_info,
     list_adapters,
     load_dataset,
@@ -26,6 +28,8 @@ def test_list_adapters_returns_expected_defaults():
         "generic",
         "coco",
         "kitti",
+        "argoverse2",
+        "lerobot",
         "nuscenes",
         "waymo",
         "rosbag",
@@ -48,6 +52,8 @@ def test_nuscenes_adapter_availability_reflects_direct_metadata_parser():
         ("coco_dataset", "coco"),
         ("kitti_object", "kitti"),
         ("kitti_odometry", "kitti"),
+        ("argoverse2_sensor", "argoverse2"),
+        ("lerobot_local", "lerobot"),
         ("nuscenes_mini_like", "nuscenes"),
         ("waymo_index_only", "waymo"),
         ("rosbag_index_only", "rosbag"),
@@ -80,6 +86,8 @@ def test_explicit_adapter_overrides_detection():
         ("coco_dataset", "coco"),
         ("kitti_object", "kitti"),
         ("kitti_odometry", "kitti"),
+        ("argoverse2_sensor", "argoverse2"),
+        ("lerobot_local", "lerobot"),
         ("nuscenes_mini_like", "nuscenes"),
         ("waymo_index_only", "waymo"),
         ("rosbag_index_only", "rosbag"),
@@ -100,6 +108,8 @@ def test_each_adapter_loads_json_serializable_manifest(fixture: str, adapter: st
     [
         ("coco_dataset", "coco", "manifest-level"),
         ("kitti_object", "kitti", "manifest-level"),
+        ("argoverse2_sensor", "argoverse2", "manifest-level"),
+        ("lerobot_local", "lerobot", "manifest-level"),
         ("nuscenes_mini_like", "nuscenes", "manifest-level"),
         ("waymo_index_only", "waymo", "index-level"),
         ("rosbag_index_only", "rosbag", "index-level"),
@@ -121,3 +131,31 @@ def test_adapter_validation_reports_scope_and_limitations(
     assert "common manifest input summary" in payload["checked"]
     assert "common_rule_inputs" in payload["coverage"]
     assert "common_rule_stats" in payload["stats"]
+
+
+def test_adapter_entry_point_discovery(monkeypatch):
+    class PluginAdapter(DatasetAdapter):
+        name = "pluginformat"
+
+        def can_load(self, path: str | Path) -> bool:
+            return Path(path).name == "plugin"
+
+    class FakeEntryPoint:
+        name = "pluginformat"
+
+        def load(self):
+            return PluginAdapter
+
+    class FakeEntryPoints:
+        def select(self, *, group: str):
+            assert group == "datasetlint.adapters"
+            return [FakeEntryPoint()]
+
+    monkeypatch.setattr(
+        "datasetlint.adapters.registry.metadata.entry_points",
+        lambda: FakeEntryPoints(),
+    )
+
+    discover_entry_point_adapters(force=True)
+
+    assert {adapter.name for adapter in list_adapters()} >= {"pluginformat"}

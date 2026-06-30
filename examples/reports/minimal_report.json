@@ -68,6 +68,11 @@
     "max_speed_mps": 70.0,
     "min_overlap_ratio": 0.8,
     "missing_frame_gap_multiplier": 1.5,
+    "rules": {
+      "disabled": [],
+      "enabled": null,
+      "severity": {}
+    },
     "stationary_distance_threshold_m": 0.05,
     "timestamp_gap_threshold_sec": 0.5
   },
@@ -103,7 +108,7 @@
   },
   "datasetlint_version": "0.1.0",
   "findings": [],
-  "generated_at": "2026-06-29T14:09:59+00:00",
+  "generated_at": "2026-06-30T19:22:18+00:00",
   "issues": [],
   "passed": true,
   "stats": {

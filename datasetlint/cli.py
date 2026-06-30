@@ -13,6 +13,7 @@ from rich.table import Table
 
 from datasetlint._version import __version__
 from datasetlint.adapters import (
+    AdapterDependencyError,
     AdapterError,
     AdapterValidationReport,
     DatasetManifest,
@@ -452,15 +453,18 @@ def _run_adapter_validate(
     if format is OutputFormat.html:
         _usage_error("validate does not support --format html.")
     adapter_name = None if auto_detect or adapter == "auto" else adapter
+    root = _adapter_root(args[0])
     try:
         report = validate_dataset(
-            _adapter_root(args[0]),
+            root,
             adapter=adapter_name,
             split=split,
             streaming=streaming,
             deep=deep,
             max_rows=max_rows,
         )
+    except AdapterDependencyError as exc:
+        report = _adapter_dependency_error_report(root, adapter_name, deep=deep, error=str(exc))
     except AdapterError as exc:
         _usage_error(str(exc))
     if format is OutputFormat.json:
@@ -490,6 +494,46 @@ def _run_adapter_validate(
     console.print(f"stats={report.stats}")
     if not report.valid:
         raise typer.Exit(1)
+
+
+def _adapter_dependency_error_report(
+    root: str | Path,
+    adapter_name: str | None,
+    *,
+    deep: bool,
+    error: str,
+) -> AdapterValidationReport:
+    name = adapter_name or "auto"
+    detected = False
+    try:
+        if adapter_name is None:
+            selected = detect_adapter(root)
+            name = selected.name
+            detected = selected.detect(root)
+        else:
+            for detection in detect_adapters(root):
+                if detection.name == adapter_name:
+                    detected = detection.can_load
+                    break
+    except Exception:
+        detected = False
+    return AdapterValidationReport(
+        adapter_name=name,
+        dataset_root=str(root),
+        detected=detected,
+        valid=False,
+        validation_mode="deep" if deep else "adapter-error",
+        checked=[],
+        not_checked=["parser-backed adapter validation"],
+        limitations=[
+            "Validation stopped before parser-backed checks because an optional dependency "
+            "is missing."
+        ],
+        errors=[error],
+        warnings=[],
+        coverage={},
+        stats={},
+    )
 
 
 def _run_export_manifest(

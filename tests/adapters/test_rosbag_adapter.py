@@ -105,3 +105,60 @@ def test_rosbag_deep_parse_failure_is_invalid(monkeypatch):
 
     assert report.valid is False
     assert "Could not parse ." in report.errors[0]
+
+
+def test_rosbag_deep_validation_reports_dropped_topic(monkeypatch):
+    def fake_parse(dataset_root: Path, bags: list[Path], *, max_messages: int):
+        return rosbag_module._ParsedROSBag(
+            sequences=[
+                rosbag_module.SequenceRecord(
+                    sequence_id="rosbag_index_only",
+                    name="rosbag_index_only",
+                    frame_count=1,
+                )
+            ],
+            frames=[
+                rosbag_module.FrameRecord(
+                    frame_id="rosbag_index_only:0",
+                    sequence_id="rosbag_index_only",
+                    timestamp=1.0,
+                    sensor_id="/camera/image",
+                )
+            ],
+            sensors=[
+                rosbag_module.SensorStream(
+                    sensor_id="/camera/image",
+                    sensor_type="camera",
+                    frame_count=1,
+                ),
+                rosbag_module.SensorStream(
+                    sensor_id="/lidar/points",
+                    sensor_type="lidar",
+                    frame_count=0,
+                ),
+            ],
+            metadata={
+                "parse_mode": "deep",
+                "bag_files": ["rosbag_index_only"],
+                "message_count": 1,
+                "topics": [
+                    {
+                        "name": "/camera/image",
+                        "msgtype": "sensor_msgs/msg/Image",
+                        "message_count": 1,
+                    },
+                    {
+                        "name": "/lidar/points",
+                        "msgtype": "sensor_msgs/msg/PointCloud2",
+                        "message_count": 0,
+                    },
+                ],
+            },
+            limitations=["payloads not decoded"],
+        )
+
+    monkeypatch.setattr(rosbag_module, "_parse_rosbag_units", fake_parse)
+
+    report = ROSBagAdapter().validate(FIXTURES / "rosbag_index_only", deep=True)
+
+    assert any("/lidar/points has no decoded frame" in warning for warning in report.warnings)

@@ -1,0 +1,7 @@
+{
+  "repo_id": "local/robot_pick_place",
+  "codebase_version": "v2.0",
+  "splits": {
+    "train": ["000000"]
+  }
+}

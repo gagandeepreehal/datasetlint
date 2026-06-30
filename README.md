@@ -19,7 +19,7 @@ Documentation: [DatasetLint docs](https://gagandeepreehal.github.io/datasetlint/
 - Hugging Face validation uses cache metadata or guarded sampling rather than scanning entire remote datasets by default.
 - DatasetLint is not a dataset management platform, model evaluation framework, simulator, replay tool, or data host.
 - Large-dataset performance has not been benchmarked yet.
-- The config reader supports a small YAML subset, not full YAML syntax.
+- Adapter support is strongest at metadata/manifest validation; some payload formats still need format-specific decoders for full semantic checks.
 
 ## Try In 60 Seconds
 
@@ -308,6 +308,10 @@ frequency_jitter_ratio: 0.2
 frame_count_drop_ratio_warning: 0.1
 duration_drop_ratio_warning: 0.1
 issue_regression_severity: warning
+rules:
+  enabled: null
+  disabled: []
+  severity: {}
 expected_sensor_rates:
   camera_front: 10
   camera_rear: 10
@@ -315,7 +319,18 @@ expected_sensor_rates:
   gps: 10
 ```
 
-The config reader intentionally supports a simple YAML subset: scalar `key: value` pairs and one-level maps such as `expected_sensor_rates`. Unknown keys fail validation so stale configs do not silently pass.
+The config reader supports normal YAML lists and nested maps. Unknown keys fail validation so stale configs do not silently pass. Rule policy can live in config:
+
+```yaml
+rules:
+  enabled:
+    - calibration
+    - labels
+  disabled:
+    - check_sensor_frequency
+  severity:
+    check_large_timestamp_gaps: info
+```
 
 ## Reports
 
@@ -372,15 +387,17 @@ More CI templates, including report artifacts and dataset diffs, are in [docs/ci
 | Dataset / Format | Adapter | Status | Optional Dependency | Notes |
 | --- | --- | --- | --- | --- |
 | Native DatasetLint folders | `folder` | supported | none | CSV/JSON format used by existing lint checks |
-| Generic folders | `generic` | supported | none/`pyyaml` | Recursive inferred schema for images, point clouds, videos, labels, and timestamps |
+| Generic folders | `generic` | supported | none | Recursive inferred schema for images, point clouds, videos, labels, and timestamps |
 | COCO | `coco` | supported | none | Direct JSON parser for images, categories, bbox, and segmentation references |
 | KITTI | `kitti` | supported | none | Object and odometry layouts with camera, lidar, labels, calibration, and timestamps |
+| Argoverse 2 | `argoverse2` | supported | none | Sensor/scenario file indexing for AV2 logs, annotations, calibration, and timestamped filenames |
+| LeRobot | `lerobot` | supported | none | Local LeRobot metadata, episode parquet/jsonl, task metadata, and videos |
 | nuScenes | `nuscenes` | supported | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit |
 | Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata, not image/lidar payload bytes |
 | ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
 | MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
 | Hugging Face | `huggingface` | supported | `datasets` | Cache/local metadata works without the extra; guarded remote sampling needs `datasets`; sampled label/bbox-like rows feed common annotation inputs |
-| Custom adapters | subclass `DatasetAdapter` | experimental | adapter-specific | Implement `detect`, `load`, and `validate`, then register the adapter |
+| Custom adapters | `datasetlint.adapters` entry point | supported | adapter-specific | Install a package exposing a DatasetLint adapter entry point |
 
 ## Roadmap
 
@@ -393,7 +410,7 @@ Near term:
 
 Medium term:
 
-- modality-specific decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payloads, richer nuScenes payload semantics, and richer Hugging Face row schemas
+- modality-specific decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payloads, richer Argoverse 2/LeRobot payload semantics, richer nuScenes payload semantics, and richer Hugging Face row schemas
 - conversion helpers from normalized manifests to the native lintable folder format
 - richer sensor synchronization checks
 - richer static HTML report styling while keeping reports dependency-free

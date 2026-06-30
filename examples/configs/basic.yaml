@@ -11,6 +11,10 @@ max_accel_mps2: 12
 frame_count_drop_ratio_warning: 0.1
 duration_drop_ratio_warning: 0.1
 issue_regression_severity: warning
+rules:
+  enabled: null
+  disabled: []
+  severity: {}
 expected_sensor_rates:
   camera_front: 10
   imu: 100

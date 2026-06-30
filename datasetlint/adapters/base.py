@@ -434,6 +434,36 @@ _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
         ],
         "limitations": ["KITTI validation parses text metadata and indexes binary sensor files."],
     },
+    "argoverse2": {
+        "validation_mode": "manifest-level",
+        "checked": [
+            "Argoverse 2 log/scenario discovery",
+            "camera/lidar/scenario file indexing",
+            "annotation and calibration file presence",
+            "timestamp consistency when timestamps are encoded in filenames",
+        ],
+        "not_checked": ["feather/parquet payload decoding", "map semantics", "AV2 metric checks"],
+        "limitations": [
+            "Argoverse 2 validation indexes common files without requiring the av2 devkit."
+        ],
+    },
+    "lerobot": {
+        "validation_mode": "manifest-level",
+        "checked": [
+            "LeRobot metadata discovery",
+            "episode parquet/jsonl file indexing",
+            "episode video indexing",
+            "task metadata indexing",
+        ],
+        "not_checked": [
+            "parquet row decoding",
+            "video frame decoding",
+            "observation/action tensor semantics",
+        ],
+        "limitations": [
+            "LeRobot validation indexes local files without requiring lerobot or pyarrow."
+        ],
+    },
     "nuscenes": {
         "validation_mode": "manifest-level",
         "checked": [
