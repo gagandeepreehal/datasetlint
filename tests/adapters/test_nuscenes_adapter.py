@@ -51,6 +51,32 @@ def test_nuscenes_validation_catches_missing_sample_data_file(tmp_path):
     assert any("Missing sample_data file" in error for error in report.errors)
 
 
+def test_nuscenes_validation_reports_invalid_roots_without_raising(tmp_path):
+    not_a_dataset = tmp_path / "not_a_dataset.txt"
+    not_a_dataset.write_text("not a nuScenes dataset", encoding="utf-8")
+
+    file_report = NuScenesAdapter().validate(not_a_dataset)
+    missing_report = NuScenesAdapter().validate(tmp_path / "missing")
+
+    assert file_report.valid is False
+    assert file_report.detected is False
+    assert file_report.errors == ["No nuScenes metadata folder found."]
+    assert missing_report.valid is False
+    assert missing_report.detected is False
+    assert missing_report.errors == ["No nuScenes metadata folder found."]
+
+
+def test_nuscenes_validation_reports_missing_metadata_without_raising(tmp_path):
+    dataset = _copy_nuscenes_fixture(tmp_path)
+    (dataset / "v1.0-mini" / "sample.json").unlink()
+
+    report = NuScenesAdapter().validate(dataset)
+
+    assert report.valid is False
+    assert report.detected is False
+    assert report.errors == ["No nuScenes metadata folder found."]
+
+
 def test_nuscenes_deep_validation_reports_payload_diagnostics(tmp_path):
     dataset = _copy_nuscenes_fixture(tmp_path)
     (dataset / "v1.0-mini" / "samples" / "CAM_FRONT" / "000001.jpg").write_bytes(
@@ -73,6 +99,24 @@ def test_nuscenes_deep_validation_reports_payload_diagnostics(tmp_path):
     assert report.stats["payload_sample_count"] == 2
     assert report.stats["camera_image_payload_count"] == 1
     assert report.stats["lidar_payload_count"] == 1
+    assert report.stats["invalid_payload_count"] == 0
+
+
+def test_nuscenes_deep_validation_accepts_radar_pcd_payload(tmp_path):
+    dataset = _copy_nuscenes_fixture(tmp_path)
+    (dataset / "v1.0-mini" / "samples" / "CAM_FRONT" / "000001.jpg").write_bytes(
+        _jpeg_header(width=640, height=480)
+    )
+    (dataset / "v1.0-mini" / "samples" / "LIDAR_TOP" / "000001.bin").write_bytes(
+        struct.pack("<5f", 1.0, 2.0, 3.0, 4.0, 5.0)
+    )
+    _add_radar_sample(dataset)
+
+    report = NuScenesAdapter().validate(dataset, deep=True, max_rows=10)
+
+    assert report.valid is True
+    assert report.coverage["radar_payload_points"] is True
+    assert report.stats["radar_payload_count"] == 1
     assert report.stats["invalid_payload_count"] == 0
 
 
@@ -122,6 +166,44 @@ def _copy_nuscenes_fixture(tmp_path: Path) -> Path:
     return target
 
 
+def _add_radar_sample(dataset: Path) -> None:
+    version = dataset / "v1.0-mini"
+    sensor_path = version / "sensor.json"
+    sensors = json.loads(sensor_path.read_text(encoding="utf-8"))
+    sensors.append(
+        {
+            "token": "sensor-radar",
+            "channel": "RADAR_FRONT",
+            "modality": "radar",
+        }
+    )
+    sensor_path.write_text(json.dumps(sensors), encoding="utf-8")
+
+    calibration_path = version / "calibrated_sensor.json"
+    calibration = json.loads(calibration_path.read_text(encoding="utf-8"))
+    calibration.append({"token": "calib-radar", "sensor_token": "sensor-radar"})
+    calibration_path.write_text(json.dumps(calibration), encoding="utf-8")
+
+    radar_file = version / "samples" / "RADAR_FRONT" / "000001.pcd"
+    radar_file.parent.mkdir(parents=True)
+    radar_file.write_bytes(_radar_pcd_payload(points=2))
+
+    sample_data_path = version / "sample_data.json"
+    sample_data = json.loads(sample_data_path.read_text(encoding="utf-8"))
+    sample_data.append(
+        {
+            "token": "sample-data-radar",
+            "sample_token": "sample-token",
+            "calibrated_sensor_token": "calib-radar",
+            "ego_pose_token": "ego-pose",
+            "filename": "v1.0-mini/samples/RADAR_FRONT/000001.pcd",
+            "timestamp": 1000000,
+            "channel": "RADAR_FRONT",
+        }
+    )
+    sample_data_path.write_text(json.dumps(sample_data), encoding="utf-8")
+
+
 def _jpeg_header(*, width: int, height: int) -> bytes:
     return (
         b"\xff\xd8"
@@ -133,3 +215,21 @@ def _jpeg_header(*, width: int, height: int) -> bytes:
         + b"\x03\x01\x11\x00\x02\x11\x00\x03\x11\x00"
         b"\xff\xd9"
     )
+
+
+def _radar_pcd_payload(*, points: int) -> bytes:
+    header = (
+        "# .PCD v0.7 - Point Cloud Data file format\n"
+        "VERSION .7\n"
+        "FIELDS x y z dyn_prop id rcs vx vy vx_comp vy_comp is_quality_valid "
+        "ambig_state x_rms y_rms invalid_state pdh0 vx_rms vy_rms\n"
+        "SIZE 4 4 4 1 2 4 4 4 4 4 1 1 1 1 1 1 1 1\n"
+        "TYPE F F F I I F F F F F I I I I I I I I\n"
+        "COUNT 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1\n"
+        f"WIDTH {points}\n"
+        "HEIGHT 1\n"
+        "VIEWPOINT 0 0 0 1 0 0 0\n"
+        f"POINTS {points}\n"
+        "DATA binary\n"
+    )
+    return header.encode("ascii") + b"\0" * points

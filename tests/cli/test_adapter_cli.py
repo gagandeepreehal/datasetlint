@@ -140,6 +140,23 @@ def test_cli_validate_json_exits_nonzero_when_invalid(tmp_path):
     assert any("Missing image file" in error for error in payload["errors"])
 
 
+def test_cli_validate_json_reports_invalid_nuscenes_root(tmp_path):
+    not_a_dataset = tmp_path / "not_a_dataset.txt"
+    not_a_dataset.write_text("not a nuScenes dataset", encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app,
+        ["validate", str(not_a_dataset), "--adapter", "nuscenes", "--format", "json"],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.stdout)
+    assert payload["adapter_name"] == "nuscenes"
+    assert payload["detected"] is False
+    assert payload["valid"] is False
+    assert payload["errors"] == ["No nuScenes metadata folder found."]
+
+
 def test_cli_validate_json_reports_missing_deep_dependency(monkeypatch):
     def fake_reader():
         raise mcap_module.AdapterDependencyError(

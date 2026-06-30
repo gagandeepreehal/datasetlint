@@ -233,8 +233,22 @@ class NuScenesAdapter(DatasetAdapter):
         )
 
     def validate(self, root: str | Path, **kwargs: Any) -> AdapterValidationReport:
-        manifest = self.load(root, **kwargs)
         dataset_root = Path(root)
+        deep_requested = bool(kwargs.get("deep", False) or kwargs.get("parse_payloads", False))
+        try:
+            manifest = self.load(root, **kwargs)
+        except Exception as exc:
+            return AdapterValidationReport(
+                adapter_name=self.name,
+                dataset_root=str(root),
+                detected=self.detect(root),
+                valid=False,
+                **_nuscenes_scope(deep_requested, []),
+                errors=[str(exc)],
+                warnings=[],
+                coverage={},
+                stats={},
+            )
         metadata_dir = _metadata_dir(dataset_root)
         deep = manifest.metadata.get("parse_mode") == "deep"
         errors: list[str] = []
@@ -324,6 +338,8 @@ class NuScenesAdapter(DatasetAdapter):
 def _metadata_dir(root: Path) -> Path | None:
     if all((root / table).is_file() for table in ("sample.json", "sample_data.json")):
         return root
+    if not root.is_dir():
+        return None
     version_dirs = sorted(
         child for child in root.iterdir() if child.is_dir() and child.name.startswith("v")
     )
@@ -501,8 +517,10 @@ def _apply_payload_summaries(
 def _payload_summary(path: Path, frame: FrameRecord, sensor_type: str) -> dict[str, Any]:
     if sensor_type == "camera":
         return _camera_payload_summary(path, frame)
-    if sensor_type in {"lidar", "radar"}:
-        return _point_payload_summary(path, sensor_type)
+    if sensor_type == "lidar":
+        return _lidar_payload_summary(path)
+    if sensor_type == "radar":
+        return _radar_payload_summary(path)
     return {
         "payload_type": sensor_type,
         "valid": False,
@@ -552,33 +570,112 @@ def _camera_payload_summary(path: Path, frame: FrameRecord) -> dict[str, Any]:
     }
 
 
-def _point_payload_summary(path: Path, sensor_type: str) -> dict[str, Any]:
+def _lidar_payload_summary(path: Path) -> dict[str, Any]:
     size_bytes = _file_size(path)
     if size_bytes <= 0:
         return {
-            "payload_type": f"{sensor_type}_points",
+            "payload_type": "lidar_points",
             "valid": False,
             "size_bytes": size_bytes,
-            "error": f"{sensor_type} payload is empty",
+            "error": "lidar payload is empty",
         }
-    bytes_per_point = 20 if sensor_type == "lidar" else 4
+    bytes_per_point = 20
     if size_bytes % bytes_per_point != 0:
         return {
-            "payload_type": f"{sensor_type}_points",
+            "payload_type": "lidar_points",
             "valid": False,
             "size_bytes": size_bytes,
             "error": (
-                f"{sensor_type} payload size {size_bytes} is not divisible by "
+                f"lidar payload size {size_bytes} is not divisible by "
                 f"{bytes_per_point} bytes per point"
             ),
         }
     return {
-        "payload_type": f"{sensor_type}_points",
+        "payload_type": "lidar_points",
         "valid": True,
         "size_bytes": size_bytes,
         "point_count": size_bytes // bytes_per_point,
         "bytes_per_point": bytes_per_point,
     }
+
+
+def _radar_payload_summary(path: Path) -> dict[str, Any]:
+    size_bytes = _file_size(path)
+    if size_bytes <= 0:
+        return {
+            "payload_type": "radar_points",
+            "valid": False,
+            "size_bytes": size_bytes,
+            "error": "radar payload is empty",
+        }
+    header = _pcd_header(path)
+    if header.get("error") is not None:
+        return {
+            "payload_type": "radar_points",
+            "valid": False,
+            "size_bytes": size_bytes,
+            "error": header["error"],
+        }
+    return {
+        "payload_type": "radar_points",
+        "valid": True,
+        "size_bytes": size_bytes,
+        "point_count": header.get("point_count"),
+        "fields": header.get("fields", []),
+        "data_encoding": header.get("data_encoding"),
+    }
+
+
+def _pcd_header(path: Path) -> dict[str, Any]:
+    try:
+        lines = path.read_bytes().splitlines()
+    except OSError as exc:
+        return {"error": f"could not read radar PCD header: {exc}"}
+    header: dict[str, list[str]] = {}
+    for raw_line in lines:
+        line = raw_line.decode("ascii", errors="ignore").strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split()
+        key = parts[0].upper()
+        header[key] = parts[1:]
+        if key == "DATA":
+            break
+    if "DATA" not in header:
+        return {"error": "radar PCD payload is missing DATA header"}
+    fields = header.get("FIELDS", [])
+    if not fields:
+        return {"error": "radar PCD payload is missing FIELDS header"}
+    point_count = _pcd_point_count(header)
+    if point_count is None:
+        return {"error": "radar PCD payload is missing POINTS or WIDTH/HEIGHT header"}
+    return {
+        "fields": fields,
+        "point_count": point_count,
+        "data_encoding": " ".join(header["DATA"]),
+    }
+
+
+def _pcd_point_count(header: dict[str, list[str]]) -> int | None:
+    points = _pcd_positive_int(header, "POINTS")
+    if points is not None:
+        return points
+    width = _pcd_positive_int(header, "WIDTH")
+    height = _pcd_positive_int(header, "HEIGHT")
+    if width is None or height is None:
+        return None
+    return width * height
+
+
+def _pcd_positive_int(header: dict[str, list[str]], name: str) -> int | None:
+    values = header.get(name, [])
+    if not values:
+        return None
+    try:
+        value = int(values[0])
+    except ValueError:
+        return None
+    return value if value >= 0 else None
 
 
 def _nuscenes_deep_diagnostics(manifest: DatasetManifest) -> dict[str, Any]:
