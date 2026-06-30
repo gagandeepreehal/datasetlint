@@ -4,6 +4,20 @@ Adapters let DatasetLint inspect common robotics, autonomous-driving, vision, an
 
 The existing lint rules still run against the native `folder` adapter. The newer adapters produce a normalized `DatasetManifest` for discovery, inspection, validation, and export.
 
+## Which Command Should I Use?
+
+| Need | Command |
+| --- | --- |
+| See installed and discoverable adapters | `datasetlint adapters list` |
+| Ask DatasetLint what matches a path | `datasetlint adapters detect DATASET_PATH` |
+| Print a summarized manifest | `datasetlint inspect DATASET_PATH --adapter NAME` |
+| Validate an adapter manifest for CI | `datasetlint validate DATASET_PATH --adapter NAME --format json` |
+| Save the normalized manifest | `datasetlint export-manifest DATASET_PATH --adapter NAME --output manifest.json` |
+| Parse MCAP, ROS bag, or Waymo metadata instead of file-only indexing | `datasetlint validate DATASET_PATH --adapter NAME --deep` |
+
+Use `inspect` when you are exploring a new dataset. Use `validate` when the
+result should pass or fail a job.
+
 ## Commands
 
 ```bash
@@ -20,6 +34,55 @@ datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.js
 ```
 
 All adapter commands support `--format console`, `--format json`, and `--format markdown` except `export-manifest`, which writes JSON to `--output`. `inspect`, `validate`, and `export-manifest` also accept `--deep` for parser-backed MCAP, ROS bag, and Waymo metadata when the matching optional extra is installed. If `validate --deep` cannot run because an optional parser is missing or cannot parse the file, adapter validation reports `valid: false` in the requested output format and exits non-zero through the CLI.
+
+## Common Workflows
+
+### Validate A Local COCO Or KITTI Dataset
+
+```bash
+datasetlint adapters detect /data/coco/train2017
+datasetlint validate /data/coco/train2017 --adapter coco --format json
+
+datasetlint validate /data/kitti/object --adapter kitti
+```
+
+### Inspect Argoverse 2 Or LeRobot
+
+```bash
+datasetlint inspect /data/av2/sensor --adapter argoverse2
+datasetlint validate /data/av2/sensor --adapter argoverse2 --format json
+
+datasetlint inspect /data/lerobot/push_cube --adapter lerobot
+datasetlint validate /data/lerobot/push_cube --adapter lerobot --format json
+```
+
+These adapters index the common local files without requiring heavy devkits.
+They do not decode parquet, feather, video, image, or lidar payload contents.
+
+### Deep-Validate MCAP And ROS Bag Metadata
+
+```bash
+python -m pip install -e ".[mcap]"
+datasetlint validate logs/run.mcap --adapter mcap --deep --format json
+
+python -m pip install -e ".[ros]"
+datasetlint validate logs/run.bag --adapter rosbag --deep --format json
+```
+
+Default mode only indexes files. Deep mode reads topic/channel/schema/timestamp
+metadata where the optional parser supports it. It still does not decode every
+camera frame, point cloud, or ROS message into semantic native records.
+
+### Use A Third-Party Adapter
+
+Install the package into the same environment as `datasetlint`, then confirm it
+is discoverable:
+
+```bash
+python -m pip install datasetlint-myformat
+datasetlint adapters list
+datasetlint validate /data/internal-log --adapter myformat --format json
+```
 
 ## Supported Datasets
 
@@ -62,6 +125,19 @@ Common manifest rules only run on records the adapter actually decoded. Waymo in
 Adapter availability is about optional dependencies, not validation depth for every code path. For example, `datasetlint adapters list --format json` may report `huggingface` as `available-index-only` when the `datasets` package is missing, while local cache-like Hugging Face metadata can still validate at manifest level. nuScenes is `available` because DatasetLint can parse metadata JSON tables directly; the optional devkit is not required for the current manifest-level checks.
 
 Deep native rule validation currently means the DatasetLint folder rule engine. Adapter `--deep` mode parses external-format metadata into manifests and runs the shared manifest-rule layer where possible; it does not yet run every native rule over those manifests.
+
+## Output And Exit Codes
+
+Adapter validation exits with:
+
+- `0` when the adapter validation report is valid
+- `1` when validation produces errors, including missing required parser
+  dependencies for a requested deep validation
+- `2` for usage errors such as an unknown adapter name or invalid command
+
+When `--format json` or `--format markdown` is requested, validation failures
+are emitted in that format. This includes missing optional deep dependencies,
+so CI consumers can parse the report instead of scraping plain text.
 
 ## Installation Extras
 

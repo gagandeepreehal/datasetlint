@@ -2,13 +2,32 @@
 
 DatasetLint validates local robotics and physical AI datasets before they enter training, evaluation, or analysis pipelines.
 
-It is intentionally small:
+It is intentionally small: local files in, deterministic report out. Use it when
+you want to catch schema drift, broken references, timestamp problems, label
+issues, calibration mistakes, or adapter ingestion failures before a dataset
+reaches training or CI.
+
+## Start With The Workflow You Need
+
+| Goal | Read This | First Command |
+| --- | --- | --- |
+| Install and run the examples | [Getting Started](getting-started.md) | `datasetlint examples/minimal_dataset` |
+| Validate the native CSV/JSON folder format | [Dataset Format](dataset-format.md) | `datasetlint lint DATASET_PATH` |
+| Run only selected checks or change severities | [Configuration](configuration.md) | `datasetlint DATASET_PATH --config DATASET_PATH/datasetlint.yaml` |
+| Inspect MCAP, ROS bag, Argoverse 2, LeRobot, COCO, KITTI, or other formats | [Adapters](adapters.md) | `datasetlint validate DATASET_PATH --adapter auto` |
+| Save JSON, Markdown, or HTML artifacts | [Reports](reports.md) | `datasetlint report DATASET_PATH --out report.json` |
+| Fix a failing run | [Troubleshooting](troubleshooting.md) | `datasetlint DATASET_PATH --format json` |
+| Add a CI gate | [CI Templates](ci.md) | `datasetlint DATASET_PATH --fail-on warning` |
+
+## What You Get
 
 - Python 3.10+
 - local files in, report out
 - CLI and importable Python API
 - no ROS, simulator, GPU, cloud, or model dependency
 - native support for the folder CSV/JSON dataset format
+- adapter manifests for common robotics and vision dataset formats
+- JSON output and stable exit codes for CI
 
 ## Start Here
 

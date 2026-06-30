@@ -12,6 +12,21 @@ next. JSON, Markdown, HTML, and console reports include:
 
 CSV rows are 1-based. Row 1 is the header and the first data row is row 2.
 
+## First Triage
+
+1. Re-run with JSON so every field is visible:
+
+   ```bash
+   datasetlint DATASET_PATH --format json
+   ```
+
+2. Open the reported `file` and `row` first. Most native lint failures point at
+   the exact CSV row or JSON file involved.
+3. Read `metadata.suggestion` when present. It is intended to be the first fix
+   to try.
+4. If the rule is correct but too strict for this dataset, change the config
+   rather than ignoring the whole report.
+
 ## Native Folder Checks
 
 For native folder datasets, start with the issue location:
@@ -40,6 +55,17 @@ rules:
     - labels
 ```
 
+## Common Native-Folder Symptoms
+
+| Symptom | Likely Cause | First Fix |
+| --- | --- | --- |
+| `metadata.json` is missing | Dataset is not in the native folder layout | Add the file or validate through an adapter |
+| Broken path under `sensors/*.csv` | A CSV row references a missing image or file | Fix the relative path from the dataset root |
+| Timestamp gap warning | Dropped frames, logging pause, or wrong time unit | Inspect the reported row and tune `timestamp_gap_threshold_sec` only if expected |
+| Sensor frequency warning | Expected rate does not match this collection setup | Update `expected_sensor_rates` or disable `check_sensor_frequency` |
+| Sync gap warning | Streams are offset or clocks are not aligned | Compare sensor start times and hardware clock configuration |
+| Label timestamp error | Labels refer to times outside observed sensor data | Fix label timestamps or include the matching sensor rows |
+
 ## MCAP And ROS Bag Logs
 
 Use deep validation when you need topic/channel timestamps rather than file-only
@@ -64,6 +90,28 @@ python -m pip install -e ".[mcap]"
 python -m pip install -e ".[ros]"
 ```
 
+If you requested JSON, missing deep dependencies are still reported as JSON:
+
+```bash
+datasetlint validate logs/run.mcap --adapter mcap --deep --format json
+```
+
+The report will have `valid: false`, `validation_mode: deep`, and an `errors`
+entry explaining which optional package is missing.
+
+## Adapter Validation
+
+Use `inspect` before `validate` when a dataset format is new to you:
+
+```bash
+datasetlint adapters detect DATASET_PATH
+datasetlint inspect DATASET_PATH --adapter auto
+datasetlint validate DATASET_PATH --adapter auto --format json
+```
+
+If `--adapter auto` is ambiguous, pass the adapter explicitly. DatasetLint does
+not silently choose between multiple specialized adapters.
+
 ## Adapter Plugins
 
 If a third-party adapter does not appear in `datasetlint adapters list`, check
@@ -76,3 +124,22 @@ myformat = "datasetlint_myformat:MyFormatAdapter"
 
 Then confirm the package is installed in the same Python environment as the
 `datasetlint` command.
+
+## Config Errors
+
+Unknown config keys are usage errors and exit with code `2`. This is deliberate:
+old config names should fail loudly instead of silently changing CI behavior.
+
+Check:
+
+- key spelling against [Configuration](configuration.md)
+- indentation under `rules.enabled`, `rules.disabled`, and `rules.severity`
+- whether a value that should be a list is written as a scalar
+
+## Exit Codes
+
+| Code | Meaning | What To Do |
+| ---: | --- | --- |
+| `0` | No issue met the configured failure threshold | Save the report if needed |
+| `1` | Validation failed, adapter validation failed, or diff regressions were found | Read issue fields or adapter `errors` |
+| `2` | Invalid usage, unknown check or adapter, or invalid config | Fix the command or config before rerunning |

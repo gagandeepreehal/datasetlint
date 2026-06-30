@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -359,15 +360,52 @@ def _splits_from_info(info: dict[str, Any], frames: list[FrameRecord]) -> dict[s
         return {}
     splits: dict[str, list[str]] = {}
     for split_name, values in raw_splits.items():
-        if isinstance(values, list):
-            episode_ids = {str(value) for value in values}
-            episode_ids.update(str(value).zfill(6) for value in values)
+        episode_ids = _episode_ids_from_split_values(values)
+        if episode_ids:
             splits[str(split_name)] = [
                 frame.frame_id
                 for frame in frames
                 if frame.sequence_id is not None and frame.sequence_id in episode_ids
             ]
     return splits
+
+
+def _episode_ids_from_split_values(values: object) -> set[str]:
+    if isinstance(values, str):
+        return _episode_ids_from_split_string(values)
+    if isinstance(values, int):
+        return _normalized_episode_ids([values])
+    if isinstance(values, list):
+        return _normalized_episode_ids(values)
+    return set()
+
+
+def _episode_ids_from_split_string(value: str) -> set[str]:
+    stripped = value.strip()
+    if not stripped:
+        return set()
+    if ":" not in stripped:
+        return _normalized_episode_ids([stripped])
+    parts = stripped.split(":")
+    if len(parts) != 2:
+        return set()
+    try:
+        start = int(parts[0] or 0)
+        end = int(parts[1])
+    except ValueError:
+        return set()
+    if end < start:
+        return set()
+    return _normalized_episode_ids(range(start, end))
+
+
+def _normalized_episode_ids(values: Iterable[object]) -> set[str]:
+    episode_ids: set[str] = set()
+    for value in values:
+        episode_id = str(value)
+        episode_ids.add(episode_id)
+        episode_ids.add(episode_id.zfill(6))
+    return episode_ids
 
 
 def _optional_int(value: object) -> int | None:

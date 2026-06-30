@@ -26,3 +26,19 @@ def test_argoverse2_validation_reports_manifest_scope():
     assert "common timestamp consistency" in report.checked
     assert not any("median sync gap" in warning for warning in report.warnings)
     assert report.stats["frame_count"] == 3
+
+
+def test_argoverse2_adapter_detects_logs_under_split_directories(tmp_path: Path):
+    log_dir = tmp_path / "train" / "log_001"
+    lidar_dir = log_dir / "sensors" / "lidar"
+    lidar_dir.mkdir(parents=True)
+    (lidar_dir / "1000000000000000000.feather").touch()
+
+    adapter = Argoverse2Adapter()
+    manifest = adapter.load(tmp_path)
+
+    assert adapter.can_load(tmp_path) is True
+    assert [sequence.sequence_id for sequence in manifest.sequences] == ["train/log_001"]
+    assert manifest.frames[0].file_path == (
+        "train/log_001/sensors/lidar/1000000000000000000.feather"
+    )

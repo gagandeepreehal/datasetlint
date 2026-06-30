@@ -27,6 +27,7 @@ from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_ma
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 LIDAR_EXTENSIONS = {".feather", ".pcd", ".bin", ".ply"}
 SCENARIO_EXTENSIONS = {".parquet"}
+SPLIT_DIRECTORIES = {"train", "val", "test"}
 
 
 class Argoverse2Adapter(DatasetAdapter):
@@ -197,7 +198,20 @@ class Argoverse2Adapter(DatasetAdapter):
 def _log_dirs(root: Path) -> list[Path]:
     if _is_log_dir(root):
         return [root]
-    return sorted(child for child in root.iterdir() if child.is_dir() and _is_log_dir(child))
+    logs: list[Path] = []
+    for child in root.iterdir():
+        if not child.is_dir():
+            continue
+        if _is_log_dir(child):
+            logs.append(child)
+            continue
+        if child.name in SPLIT_DIRECTORIES:
+            logs.extend(
+                grandchild
+                for grandchild in child.iterdir()
+                if grandchild.is_dir() and _is_log_dir(grandchild)
+            )
+    return sorted(logs)
 
 
 def _is_log_dir(path: Path) -> bool:

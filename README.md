@@ -23,17 +23,37 @@ Documentation: [DatasetLint docs](https://gagandeepreehal.github.io/datasetlint/
 
 ## Try In 60 Seconds
 
-After installing from source, run the passing and failing examples:
+After installing from source, run one passing dataset, one failing dataset, and
+one machine-readable report:
 
 ```bash
 datasetlint --version
 datasetlint examples/minimal_dataset
 datasetlint examples/bad_dataset
+datasetlint examples/bad_dataset --format json
 datasetlint examples/bad_dataset --format html > report.html
 datasetlint diff examples/minimal_dataset examples/bad_dataset --fail-on-regression
 ```
 
-`examples/minimal_dataset` should pass. `examples/bad_dataset` and the diff command should exit non-zero because they intentionally contain robotics data quality problems.
+`examples/minimal_dataset` should pass. `examples/bad_dataset` and the diff
+command should exit non-zero because they intentionally contain robotics data
+quality problems.
+
+Common next steps:
+
+```bash
+datasetlint DATASET_PATH --checks calibration,labels
+datasetlint DATASET_PATH --config DATASET_PATH/datasetlint.yaml --fail-on warning
+datasetlint validate DATASET_PATH --adapter auto --format json
+datasetlint validate logs/run.mcap --adapter mcap --deep --format json
+```
+
+Use the docs when you need the exact workflow:
+
+- [Getting Started](https://gagandeepreehal.github.io/datasetlint/getting-started/) for the first local run
+- [Configuration](https://gagandeepreehal.github.io/datasetlint/configuration/) for per-rule enable/disable and severity overrides
+- [Adapters](https://gagandeepreehal.github.io/datasetlint/adapters/) for MCAP, ROS bag, Argoverse 2, LeRobot, COCO, KITTI, nuScenes, Waymo, Hugging Face, and plugins
+- [Troubleshooting](https://gagandeepreehal.github.io/datasetlint/troubleshooting/) for reading failures and fixing noisy checks
 
 ## Why This Exists
 
@@ -88,7 +108,7 @@ DatasetLint v0.1 supports deep rule validation for the native folder dataset for
 - label columns, confidence, geometry, timestamp range, class switches, duplicate tracks, short tracks, missing labels, box jumps, and size changes
 - trajectory columns, finite values, speed, acceleration, yaw range, and stationary motion
 - dataset statistics and folder-to-folder diffs
-- normalized adapter manifests for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets
+- normalized adapter manifests for generic folders, COCO, KITTI, Argoverse 2, LeRobot, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets
 - adapter validation, inspection, discovery, and manifest export commands
 - shared manifest-rule summaries for decoded adapter records, including frame references, timestamp consistency, sensor links, calibration shape, annotation links, and split references where the adapter exposes those records
 - single-file adapter roots such as `.bag`, `.mcap`, and `.tfrecord` resolve relative frame/file records from the containing directory
