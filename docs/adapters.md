@@ -13,7 +13,7 @@ The existing lint rules still run against the native `folder` adapter. The newer
 | Print a summarized manifest | `datasetlint inspect DATASET_PATH --adapter NAME` |
 | Validate an adapter manifest for CI | `datasetlint validate DATASET_PATH --adapter NAME --format json` |
 | Save the normalized manifest | `datasetlint export-manifest DATASET_PATH --adapter NAME --output manifest.json` |
-| Parse MCAP, ROS bag, Waymo, or Hugging Face sample metadata instead of file-only indexing | `datasetlint validate DATASET_PATH --adapter NAME --deep` |
+| Parse nuScenes payload summaries, MCAP/ROS bag metadata, Waymo frames, or Hugging Face sampled rows instead of file-only indexing | `datasetlint validate DATASET_PATH --adapter NAME --deep` |
 
 Use `inspect` when you are exploring a new dataset. Use `validate` when the
 result should pass or fail a job.
@@ -27,13 +27,14 @@ datasetlint adapters DATASET_PATH
 datasetlint inspect DATASET_PATH --adapter coco
 datasetlint inspect DATASET_PATH --auto-detect
 datasetlint validate DATASET_PATH --adapter kitti
+datasetlint validate DATASET_PATH --adapter nuscenes --deep
 datasetlint validate DATASET_PATH --adapter mcap --deep
 datasetlint inspect DATASET_PATH --adapter waymo --deep --max-rows 1000
 datasetlint validate hf://namespace/dataset --adapter huggingface --split train --deep --max-rows 1000
 datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.json
 ```
 
-All adapter commands support `--format console`, `--format json`, and `--format markdown` except `export-manifest`, which writes JSON to `--output`. `inspect`, `validate`, and `export-manifest` also accept `--deep` for parser-backed MCAP, ROS bag, Waymo metadata, and sampled Hugging Face rows when the matching optional extra is installed. If `validate --deep` cannot run because an optional parser is missing or cannot parse the input, adapter validation reports `valid: false` in the requested output format and exits non-zero through the CLI.
+All adapter commands support `--format console`, `--format json`, and `--format markdown` except `export-manifest`, which writes JSON to `--output`. `inspect`, `validate`, and `export-manifest` also accept `--deep` for nuScenes payload summaries, parser-backed MCAP, ROS bag, and Waymo metadata, and sampled Hugging Face rows when the matching optional parser is needed. If `validate --deep` cannot run because an optional parser is missing or cannot parse the input, adapter validation reports `valid: false` in the requested output format and exits non-zero through the CLI.
 
 ## Common Workflows
 
@@ -73,9 +74,11 @@ Default mode only indexes files. Deep mode reads topic/channel/schema/timestamp
 metadata where the optional parser supports it. It still does not decode every
 camera frame, point cloud, or ROS message into semantic native records.
 
-### Deep-Validate Waymo Or Hugging Face Samples
+### Deep-Validate nuScenes, Waymo, Or Hugging Face Samples
 
 ```bash
+datasetlint validate /data/nuscenes --adapter nuscenes --deep --max-rows 1000 --format json
+
 python -m pip install -e ".[waymo]"
 datasetlint validate /data/waymo --adapter waymo --deep --max-rows 1000 --format json
 
@@ -83,11 +86,13 @@ python -m pip install -e ".[hf]"
 datasetlint validate hf://namespace/dataset --adapter huggingface --split train --deep --max-rows 1000 --format json
 ```
 
-Waymo deep mode parses frame, sensor, label, calibration, and payload-summary
-metadata where the optional parser supports it. Hugging Face deep mode samples
-bounded rows, projects label/bbox-like columns into common annotation records,
-and reports malformed sampled bbox payloads or duplicate sample IDs. Neither
-mode scans the entire dataset by default.
+nuScenes deep mode inspects referenced camera image headers plus lidar/radar
+payload sizes without requiring the devkit. Waymo deep mode parses frame,
+sensor, label, calibration, and payload-summary metadata where the optional
+parser supports it. Hugging Face deep mode samples bounded rows, projects
+label/bbox-like columns into common annotation records, and reports malformed
+sampled bbox payloads or duplicate sample IDs. None of these modes scans the
+entire dataset by default.
 
 ### Use A Third-Party Adapter
 
@@ -114,7 +119,7 @@ it declares a `datasetlint.adapters` entry point in `pyproject.toml`, implements
 | KITTI | `kitti` | supported | none | Object and odometry layouts with camera, lidar, labels, calibration, and timestamps |
 | Argoverse 2 | `argoverse2` | supported | none | Sensor/scenario file indexing for AV2 logs, annotations, calibration, and timestamped filenames |
 | LeRobot | `lerobot` | supported | none | Local LeRobot metadata, episode parquet/jsonl, task metadata, and videos |
-| nuScenes | `nuscenes` | supported | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit |
+| nuScenes | `nuscenes` | manifest + deep payload summaries | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit; `--deep` checks referenced camera/lidar/radar payload headers |
 | Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata, not image/lidar payload bytes |
 | ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
 | MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
@@ -131,7 +136,8 @@ Adapter validation reports expose `validation_mode`, `checked`, `not_checked`, a
 | `kitti` | manifest-level | KITTI layout, image/lidar pairing, label row shape, calibration file presence, odometry timestamp monotonicity | binary point cloud contents, camera image decoding, 3D geometry realism |
 | `argoverse2` | manifest-level | AV2 log/scenario discovery, camera/lidar/scenario file indexing, annotation/calibration file presence, timestamp consistency when encoded in filenames | feather/parquet payload decoding, map semantics, AV2 metric checks |
 | `lerobot` | manifest-level | LeRobot metadata discovery, episode table/video indexing, task metadata indexing, split references | parquet row decoding, video frame decoding, observation/action tensor semantics |
-| `nuscenes` | manifest-level | metadata tables, sample/sample_data references, annotation references, calibrated sensor references, common frame/sensor/calibration references when tables are present | sensor payload decoding, map layers, full devkit checks |
+| `nuscenes` | manifest-level | metadata tables, sample/sample_data references, annotation references, ego pose links, calibrated sensor references, common frame/sensor/calibration references when tables are present | sensor payload summaries; use `--deep`, map layers, full devkit checks |
+| `nuscenes --deep` | deep | metadata tables, sample/sample_data/ego_pose references, annotation and calibration metadata, camera image header summaries, lidar/radar payload summaries | full image pixel decoding, full point cloud decoding, radar sweep semantics, map layers, nuScenes metric evaluation |
 | `huggingface` default | index-level | local cache metadata or remote dataset identity, feature metadata when available | sampled row payloads, full dataset scan, robotics calibration, sensor synchronization, dataset-specific row schemas |
 | `huggingface --deep` | deep | Hugging Face dataset loading, feature schema metadata, sampled row payload summaries, label/bbox-like annotation projection | full dataset scan, dataset-specific semantic schemas, robotics calibration, sensor synchronization beyond timestamp-like row fields |
 | `waymo` default | index-level | TFRecord file discovery, file sizes, duplicate segment names | frame parsing, labels, calibration, sensor synchronization |
@@ -141,9 +147,9 @@ Adapter validation reports expose `validation_mode`, `checked`, `not_checked`, a
 | `mcap` default | index-level | MCAP file discovery, file sizes, empty file detection | messages, channels, schemas, timestamp synchronization |
 | `mcap --deep` | deep metadata | MCAP file discovery, channel metadata, schema metadata, message timestamp index | message payload decoding, sensor-specific semantic validation |
 
-Common manifest rules only run on records the adapter actually decoded. Waymo index-mode TFRecord placeholders are not counted as common frame or sensor inputs. MCAP and ROS bag `--deep` modes contribute channel/topic timestamp records to common timestamp, dropped-topic, and cross-topic sync checks, but message payloads are still not decoded into camera images, point clouds, poses, or labels. Waymo `--deep` contributes parsed frame, sensor, label, calibration, and payload-summary metadata when available. Hugging Face `--deep` contributes sampled rows and label/bbox-like annotations, while default Hugging Face validation remains index/cache metadata. Single-file roots such as one `.bag`, `.mcap`, or `.tfrecord` resolve relative manifest file paths from the file's containing directory.
+Common manifest rules only run on records the adapter actually decoded. Waymo index-mode TFRecord placeholders are not counted as common frame or sensor inputs. nuScenes `--deep` adds bounded camera/lidar/radar payload-summary diagnostics to its metadata-table manifest without decoding full payload semantics. MCAP and ROS bag `--deep` modes contribute channel/topic timestamp records to common timestamp, dropped-topic, and cross-topic sync checks, but message payloads are still not decoded into camera images, point clouds, poses, or labels. Waymo `--deep` contributes parsed frame, sensor, label, calibration, and payload-summary metadata when available. Hugging Face `--deep` contributes sampled rows and label/bbox-like annotations, while default Hugging Face validation remains index/cache metadata. Single-file roots such as one `.bag`, `.mcap`, or `.tfrecord` resolve relative manifest file paths from the file's containing directory.
 
-Adapter availability is about optional dependencies, not validation depth for every code path. For example, `datasetlint adapters list --format json` may report `huggingface` as `available-index-only` when the `datasets` package is missing, while local cache-like Hugging Face metadata can still validate at index level. nuScenes is `available` because DatasetLint can parse metadata JSON tables directly; the optional devkit is not required for the current manifest-level checks.
+Adapter availability is about optional dependencies, not validation depth for every code path. For example, `datasetlint adapters list --format json` may report `huggingface` as `available-index-only` when the `datasets` package is missing, while local cache-like Hugging Face metadata can still validate at index level. nuScenes is `available` because DatasetLint can parse metadata JSON tables directly; the optional devkit is not required for current manifest-level checks or bounded `--deep` payload summaries.
 
 Deep native rule validation currently means the DatasetLint folder rule engine. Adapter `--deep` mode parses external-format metadata into manifests and runs the shared manifest-rule layer where possible; it does not yet run every native rule over those manifests.
 

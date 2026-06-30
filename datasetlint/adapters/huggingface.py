@@ -26,6 +26,19 @@ from datasetlint.adapters.base import (
 from datasetlint.adapters.errors import AdapterDependencyError
 from datasetlint.adapters.manifest_rules import merge_common_rule_result, run_manifest_rules
 
+_PAYLOAD_SENSOR_TYPES = {"camera", "video", "audio", "language"}
+_IDENTIFIER_COLUMNS = {"id", "sample_id", "frame_id", "image_id"}
+_TEXT_COLUMN_HINTS = (
+    "text",
+    "caption",
+    "prompt",
+    "language",
+    "transcript",
+    "description",
+    "sentence",
+    "utterance",
+)
+
 
 class HuggingFaceAdapter(DatasetAdapter):
     """Load or index Hugging Face datasets with explicit row limits."""
@@ -545,7 +558,7 @@ def _sensors_from_features(features: dict[str, Any], frame_count: int | None) ->
     sensors: list[SensorStream] = []
     for name, feature in features.items():
         feature_text = str(feature).lower()
-        sensor_type = _feature_type(name, feature_text)
+        sensor_type = _sensor_type_from_feature(name, feature_text)
         if sensor_type == "unknown":
             continue
         sensors.append(
@@ -579,8 +592,20 @@ def _sensors_from_rows(rows: list[object], frame_count: int | None) -> list[Sens
             metadata={"inferred_from": "sampled_rows", "value_type": value_type},
         )
         for name, value_type in sorted(columns.items())
-        if (sensor_type := _feature_type(name, value_type.lower())) != "unknown"
+        if (
+            sensor_type := _sensor_type_from_feature(name, value_type.lower())
+        ) != "unknown"
     ]
+
+
+def _sensor_type_from_feature(name: str, feature_text: str) -> str:
+    lowered = name.lower()
+    if lowered in _IDENTIFIER_COLUMNS or lowered.endswith("_id"):
+        return "unknown"
+    sensor_type = _feature_type(name, feature_text)
+    if sensor_type in _PAYLOAD_SENSOR_TYPES:
+        return sensor_type
+    return "unknown"
 
 
 def _feature_type(name: str, feature_text: str) -> str:
@@ -591,7 +616,7 @@ def _feature_type(name: str, feature_text: str) -> str:
         return "video"
     if "audio" in lowered or "audio" in feature_text:
         return "audio"
-    if "text" in lowered or "language" in lowered or "string" in feature_text:
+    if any(hint in lowered for hint in _TEXT_COLUMN_HINTS) or "language" in feature_text:
         return "language"
     if "label" in lowered or "class" in lowered:
         return "label"
@@ -604,20 +629,16 @@ def _primary_sensor_from_row(row: object, features: object) -> str | None:
     feature_map = dict(features) if isinstance(features, Mapping) else {}
     if isinstance(row, dict):
         for key in row:
-            if _feature_type(str(key), str(feature_map.get(key, "")).lower()) in {
-                "camera",
-                "video",
-                "audio",
-                "language",
-            }:
+            if (
+                _sensor_type_from_feature(str(key), str(feature_map.get(key, "")).lower())
+                in _PAYLOAD_SENSOR_TYPES
+            ):
                 return str(key)
         for key in feature_map:
-            if _feature_type(str(key), str(feature_map.get(key, "")).lower()) in {
-                "camera",
-                "video",
-                "audio",
-                "language",
-            }:
+            if (
+                _sensor_type_from_feature(str(key), str(feature_map.get(key, "")).lower())
+                in _PAYLOAD_SENSOR_TYPES
+            ):
                 return str(key)
     return None
 

@@ -176,4 +176,11 @@ def test_third_party_adapter_template_declares_entry_point_and_validates(monkeyp
     assert report.valid is True
     assert report.adapter_name == "example_telemetry"
     assert report.coverage["common_rule_inputs"]["frames"] is True
+    assert "adapter-provided normalized manifest" in report.checked
     assert "common timestamp consistency" in report.checked
+    assert "recursive file index" not in report.checked
+    assert "media/label/timestamp filename patterns" not in report.checked
+    assert not any(
+        "Generic folder validation infers structure" in limitation
+        for limitation in report.limitations
+    )

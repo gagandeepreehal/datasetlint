@@ -96,8 +96,8 @@ def main(
         typer.Option(
             "--deep",
             help=(
-                "Use optional parser-backed validation for MCAP, ROS bag, and Waymo "
-                "when dependencies are installed."
+                "Use bounded deep adapter validation for nuScenes, MCAP, ROS bag, "
+                "Waymo, and Hugging Face when supported."
             ),
         ),
     ] = False,

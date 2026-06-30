@@ -16,6 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 - Full YAML config parsing for nested maps and lists.
 - Entry-point discovery for third-party adapters via the `datasetlint.adapters` group.
 - Argoverse 2 and LeRobot manifest adapters.
+- Deep nuScenes payload-summary diagnostics for referenced camera, lidar, and radar files.
 - Deep MCAP and ROS bag timestamp diagnostics for dropped topics and cross-topic desync.
 - Example datasets for passing and failing validation paths.
 - MkDocs documentation workflow and publishing workflow metadata.

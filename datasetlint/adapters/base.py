@@ -365,7 +365,7 @@ def relative_to_root(root: Path, path: Path) -> str:
 
 
 def validation_scope(adapter_name: str, limitations: list[str] | None = None) -> dict[str, Any]:
-    scope = _VALIDATION_SCOPES.get(adapter_name, _VALIDATION_SCOPES["generic"])
+    scope = _VALIDATION_SCOPES.get(adapter_name, _ADAPTER_VALIDATION_SCOPE)
     merged_limitations = [*scope["limitations"], *(limitations or [])]
     return {
         "validation_mode": scope["validation_mode"],
@@ -383,6 +383,22 @@ def _unique_strings(values: list[str]) -> list[str]:
             unique.append(value)
             seen.add(value)
     return unique
+
+
+_ADAPTER_VALIDATION_SCOPE: dict[str, Any] = {
+    "validation_mode": "manifest-level",
+    "checked": [
+        "adapter-provided normalized manifest",
+        "manifest metadata, sequence, frame, sensor, annotation, and calibration records",
+    ],
+    "not_checked": [
+        "format-specific schemas not exposed as normalized manifest records",
+        "payload decoding beyond records emitted by the selected adapter",
+    ],
+    "limitations": [
+        "Adapter validation uses normalized manifest records provided by the selected adapter."
+    ],
+}
 
 
 _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {

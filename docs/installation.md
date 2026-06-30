@@ -44,8 +44,8 @@ python -m pip install -e ".[all-adapters]"
 
 The base install can still inspect COCO, KITTI, generic folders, nuScenes
 metadata tables, index-mode Waymo, ROS bag, and MCAP datasets, and cache-like
-Hugging Face metadata without those heavy optional packages. Install the
-matching extra and use `--deep` when you want parser-backed MCAP
+Hugging Face metadata without those heavy optional packages. Use `--deep` when
+you want nuScenes camera/lidar/radar payload summaries, parser-backed MCAP
 channel/schema/timestamp metadata, ROS bag topic/message metadata, Waymo
 frame/label/calibration metadata, or sampled Hugging Face row diagnostics.
 

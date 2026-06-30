@@ -119,8 +119,8 @@ separate from `datasetlint lint`, which runs the native folder rule engine.
 Validation output includes `coverage.common_rule_inputs` and
 `stats.common_rule_stats` when decoded adapter records can feed shared manifest
 checks.
-Use `--deep` with MCAP, ROS bag, Waymo, or Hugging Face after installing the
-matching extra when you want parser-backed channel/topic/frame metadata or
+Use `--deep` with nuScenes, MCAP, ROS bag, Waymo, or Hugging Face when you want
+bounded payload summaries, parser-backed channel/topic/frame metadata, or
 sampled Hugging Face row diagnostics instead of only file/cache indexing. If the
 requested deep parser is missing or cannot parse the input, validation reports
 `valid: false` and exits with code `1`; parser warnings are not treated as

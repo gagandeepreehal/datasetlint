@@ -25,7 +25,7 @@ Docs map:
 
 - Deep validation works best on the native DatasetLint folder format.
 - Adapters provide manifest inspection, manifest export, and adapter validation for external formats.
-- MCAP, ROS bag, Waymo, and Hugging Face default to lightweight index/cache metadata; install the matching extra and pass `--deep` to parse channel/topic/frame metadata or sampled Hugging Face rows. If a requested deep parser cannot parse the input, validation fails instead of reporting a valid deep pass.
+- nuScenes, MCAP, ROS bag, Waymo, and Hugging Face have bounded `--deep` adapter modes: nuScenes inspects referenced camera/lidar/radar payload headers, MCAP and ROS bag parse channel/topic metadata, Waymo parses frame/label/calibration metadata, and Hugging Face samples rows. If a requested deep parser cannot parse the input, validation fails instead of reporting a valid deep pass.
 - Hugging Face `--deep` uses bounded row sampling rather than scanning entire remote datasets by default.
 - DatasetLint is not a dataset management platform, model evaluation framework, simulator, replay tool, or data host.
 - Large-dataset performance has not been benchmarked yet.
@@ -121,6 +121,7 @@ DatasetLint v0.1 supports deep rule validation for the native folder dataset for
 - normalized adapter manifests for generic folders, COCO, KITTI, Argoverse 2, LeRobot, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face datasets
 - adapter validation, inspection, discovery, and manifest export commands
 - shared manifest-rule summaries for decoded adapter records, including frame references, timestamp consistency, sensor links, calibration shape, annotation links, and split references where the adapter exposes those records
+- bounded deep adapter diagnostics for nuScenes payload headers, MCAP/ROS bag timestamp metadata, Waymo frame metadata, and sampled Hugging Face rows
 - single-file adapter roots such as `.bag`, `.mcap`, and `.tfrecord` resolve relative frame/file records from the containing directory
 
 ## Installation
@@ -255,6 +256,7 @@ Inspect, validate, or export normalized manifests for common formats:
 datasetlint inspect DATASET_PATH --adapter coco
 datasetlint inspect DATASET_PATH --auto-detect
 datasetlint validate DATASET_PATH --adapter kitti
+datasetlint validate DATASET_PATH --adapter nuscenes --deep
 datasetlint validate DATASET_PATH --adapter mcap --deep
 datasetlint inspect DATASET_PATH --adapter waymo --deep --max-rows 1000
 datasetlint validate hf://namespace/dataset --adapter huggingface --split train --deep --max-rows 1000
@@ -422,7 +424,7 @@ More CI templates, including report artifacts and dataset diffs, are in [docs/ci
 | KITTI | `kitti` | supported | none | Object and odometry layouts with camera, lidar, labels, calibration, and timestamps |
 | Argoverse 2 | `argoverse2` | supported | none | Sensor/scenario file indexing for AV2 logs, annotations, calibration, and timestamped filenames |
 | LeRobot | `lerobot` | supported | none | Local LeRobot metadata, episode parquet/jsonl, task metadata, and videos |
-| nuScenes | `nuscenes` | supported | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit |
+| nuScenes | `nuscenes` | manifest + deep payload summaries | optional `nuscenes-devkit` | Direct metadata-table parser available without the devkit; `--deep` checks referenced camera/lidar/radar payload headers |
 | Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata, not image/lidar payload bytes |
 | ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
 | MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
@@ -440,7 +442,7 @@ Near term:
 
 Medium term:
 
-- modality-specific decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payload bytes, richer Argoverse 2/LeRobot payload semantics, richer nuScenes payload semantics, and dataset-specific Hugging Face row schemas
+- modality-specific decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payload bytes, richer Argoverse 2/LeRobot payload semantics, full nuScenes devkit/map/point-cloud semantics, and dataset-specific Hugging Face row schemas
 - conversion helpers from normalized manifests to the native lintable folder format
 - richer sensor synchronization checks
 - richer static HTML report styling while keeping reports dependency-free

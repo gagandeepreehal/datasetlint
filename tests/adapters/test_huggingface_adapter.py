@@ -14,9 +14,11 @@ FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
 def test_huggingface_adapter_indexes_cache_like_dataset():
     manifest = HuggingFaceAdapter().load(FIXTURES / "hf_cache_like")
+    sensor_ids = {sensor.sensor_id for sensor in manifest.sensors}
 
     assert manifest.dataset_name == "hf_cache_like"
-    assert {sensor.sensor_id for sensor in manifest.sensors} >= {"image", "label", "caption"}
+    assert sensor_ids >= {"image", "caption"}
+    assert "label" not in sensor_ids
 
 
 def test_huggingface_validation_runs_common_manifest_rules():
@@ -27,7 +29,7 @@ def test_huggingface_validation_runs_common_manifest_rules():
     assert report.coverage["index_only"] is True
     assert report.coverage["common_rule_inputs"]["sensors"] is True
     assert "common sensor links" in report.checked
-    assert report.stats["common_rule_stats"]["sensor_count"] >= 3
+    assert report.stats["common_rule_stats"]["sensor_count"] >= 2
 
 
 def test_huggingface_deep_validation_reports_sample_payload_diagnostics(monkeypatch):
@@ -76,6 +78,57 @@ def test_huggingface_deep_validation_reports_sample_payload_diagnostics(monkeypa
     assert report.stats["invalid_bbox_count"] == 1
     assert any("Duplicate Hugging Face sample id" in error for error in report.errors)
     assert any("not a numeric [x, y, width, height]" in error for error in report.errors)
+
+
+def test_huggingface_deep_validation_does_not_warn_for_id_label_bbox_sensors(
+    monkeypatch,
+):
+    rows = [
+        {"id": "sample-1", "image": object(), "label": 1, "bbox": [0, 0, 10, 10]},
+        {"id": "sample-2", "image": object(), "label": 0, "bbox": [1, 2, 3, 4]},
+    ]
+
+    class FakeDataset:
+        features = {
+            "id": {"dtype": "string"},
+            "image": {"_type": "Image"},
+            "label": {"_type": "ClassLabel"},
+            "bbox": {"feature": "Sequence"},
+        }
+
+        def __len__(self) -> int:
+            return len(rows)
+
+        def select(self, indexes):
+            return [rows[index] for index in indexes]
+
+    def fake_load_dataset(dataset_id: str, *, split: str, streaming: bool):
+        assert dataset_id == "namespace/dataset"
+        assert split == "train"
+        assert streaming is False
+        return FakeDataset()
+
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name: object())
+    monkeypatch.setitem(
+        sys.modules,
+        "datasets",
+        SimpleNamespace(load_dataset=fake_load_dataset),
+    )
+
+    report = HuggingFaceAdapter().validate(
+        "hf://namespace/dataset", split="train", deep=True, max_rows=2
+    )
+
+    assert report.valid is True
+    assert report.coverage["row_payloads"] is True
+    assert report.stats["sensor_count"] == 1
+    assert report.stats["annotation_count"] == 4
+    assert report.stats["common_rule_stats"]["sensor_count"] == 1
+    assert report.stats["rows_without_primary_payload"] == 0
+    assert not any(
+        "has no decoded frame or message records" in warning
+        for warning in report.warnings
+    )
 
 
 def test_huggingface_row_labels_decode_to_common_annotations():
