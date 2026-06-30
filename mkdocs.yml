@@ -20,6 +20,7 @@ nav:
   - Checks: checks.md
   - Configuration: configuration.md
   - Reports: reports.md
+  - Troubleshooting: troubleshooting.md
   - CI Templates: ci.md
   - Stats: stats.md
   - Diff: diff.md

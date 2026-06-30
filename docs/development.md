@@ -46,7 +46,7 @@ Add rule functions under `datasetlint/checks/`, register them in `datasetlint/co
 
 ## Adding Adapters
 
-Add adapter classes under `datasetlint/adapters/`, register them in `datasetlint/adapters/registry.py`, export public classes or helpers from `datasetlint/adapters/__init__.py`, and update [Adapters](adapters.md).
+Add built-in adapter classes under `datasetlint/adapters/`, register them in `datasetlint/adapters/registry.py`, export public classes or helpers from `datasetlint/adapters/__init__.py`, and update [Adapters](adapters.md). Third-party packages can use the `datasetlint.adapters` entry-point group instead of forking the repo.
 
 An adapter should implement:
 

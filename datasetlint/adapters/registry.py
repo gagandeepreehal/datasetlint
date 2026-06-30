@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from importlib import metadata
 from pathlib import Path
+from typing import Any
 
+from datasetlint.adapters.argoverse2 import Argoverse2Adapter
 from datasetlint.adapters.base import (
     AdapterDetection,
     AdapterInfo,
@@ -17,6 +20,7 @@ from datasetlint.adapters.folder import FolderAdapter
 from datasetlint.adapters.generic import GenericFolderAdapter
 from datasetlint.adapters.huggingface import HuggingFaceAdapter
 from datasetlint.adapters.kitti import KittiAdapter
+from datasetlint.adapters.lerobot import LeRobotAdapter
 from datasetlint.adapters.mcap import MCAPAdapter
 from datasetlint.adapters.nuscenes import NuScenesAdapter
 from datasetlint.adapters.rosbag import ROSBagAdapter
@@ -24,19 +28,23 @@ from datasetlint.adapters.waymo import WaymoAdapter
 
 _REGISTRY: dict[str, DatasetAdapter] = {}
 _AUTO_FALLBACKS = {"generic", "folder"}
+_ENTRY_POINT_GROUP = "datasetlint.adapters"
+_ENTRY_POINTS_LOADED = False
+_ENTRY_POINT_ERRORS: list[str] = []
 
 
 def register_adapter(adapter_cls: type[DatasetAdapter] | DatasetAdapter) -> DatasetAdapter:
     """Register an adapter class or instance and return the instance."""
 
     adapter = adapter_cls() if isinstance(adapter_cls, type) else adapter_cls
-    _REGISTRY[adapter.name] = adapter
+    _REGISTRY[adapter.name.lower()] = adapter
     return adapter
 
 
 def get_adapter(name: str) -> DatasetAdapter:
     """Return a registered adapter by name."""
 
+    discover_entry_point_adapters()
     normalized = name.lower()
     adapter = _REGISTRY.get(normalized)
     if adapter is None:
@@ -48,6 +56,7 @@ def get_adapter(name: str) -> DatasetAdapter:
 def list_adapters() -> list[DatasetAdapter]:
     """Return registered adapters in deterministic order."""
 
+    discover_entry_point_adapters()
     return [adapter for _, adapter in sorted(_REGISTRY.items())]
 
 
@@ -61,6 +70,60 @@ def available_adapters() -> list[DatasetAdapter]:
     """Backward-compatible alias for adapter instances."""
 
     return list_adapters()
+
+
+def discover_entry_point_adapters(*, force: bool = False) -> list[DatasetAdapter]:
+    """Load adapters exposed through the ``datasetlint.adapters`` entry-point group."""
+
+    global _ENTRY_POINTS_LOADED
+    if _ENTRY_POINTS_LOADED and not force:
+        return list(_REGISTRY.values())
+    if force:
+        _ENTRY_POINT_ERRORS.clear()
+    try:
+        entry_points: Any = metadata.entry_points()
+        selected = entry_points.select(group=_ENTRY_POINT_GROUP)
+    except AttributeError:
+        selected = entry_points.get(_ENTRY_POINT_GROUP, ())
+    except Exception as exc:
+        _ENTRY_POINT_ERRORS.append(f"Could not inspect adapter entry points: {exc}.")
+        _ENTRY_POINTS_LOADED = True
+        return list(_REGISTRY.values())
+
+    for entry_point in selected:
+        try:
+            loaded = entry_point.load()
+            for adapter in _coerce_entry_point_adapters(loaded):
+                register_adapter(adapter)
+        except Exception as exc:
+            _ENTRY_POINT_ERRORS.append(
+                f"Could not load adapter entry point {entry_point.name}: {exc}."
+            )
+    _ENTRY_POINTS_LOADED = True
+    return list(_REGISTRY.values())
+
+
+def adapter_entry_point_errors() -> list[str]:
+    """Return plugin discovery errors collected during lazy discovery."""
+
+    discover_entry_point_adapters()
+    return list(_ENTRY_POINT_ERRORS)
+
+
+def _coerce_entry_point_adapters(loaded: Any) -> list[type[DatasetAdapter] | DatasetAdapter]:
+    if isinstance(loaded, DatasetAdapter):
+        return [loaded]
+    if isinstance(loaded, type) and issubclass(loaded, DatasetAdapter):
+        return [loaded]
+    if callable(loaded):
+        produced = loaded()
+        return _coerce_entry_point_adapters(produced)
+    if isinstance(loaded, list | tuple):
+        adapters: list[type[DatasetAdapter] | DatasetAdapter] = []
+        for item in loaded:
+            adapters.extend(_coerce_entry_point_adapters(item))
+        return adapters
+    raise TypeError("entry point must load a DatasetAdapter, DatasetAdapter subclass, or factory.")
 
 
 def detect_adapters(path: str | Path) -> list[AdapterDetection]:
@@ -137,6 +200,8 @@ def _register_defaults() -> None:
         GenericFolderAdapter,
         CocoAdapter,
         KittiAdapter,
+        Argoverse2Adapter,
+        LeRobotAdapter,
         NuScenesAdapter,
         WaymoAdapter,
         ROSBagAdapter,

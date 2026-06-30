@@ -21,7 +21,11 @@ def test_duplicate_timestamps_returns_warning(tmp_path):
 
     report = lint_dataset(dataset)
 
-    assert any(
-        issue.check_name == "check_duplicate_timestamps" and issue.severity == "warning"
-        for issue in report.issues
+    issue = next(
+        issue for issue in report.issues if issue.check_name == "check_duplicate_timestamps"
     )
+
+    assert issue.severity == "warning"
+    assert "Location: sensors/camera_front.csv:3." in issue.message
+    assert "Fix:" in issue.message
+    assert issue.metadata["suggestion"]

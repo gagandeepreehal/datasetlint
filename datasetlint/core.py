@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Callable
+from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 from pandas.errors import EmptyDataError, ParserError
@@ -91,6 +92,7 @@ CHECKS: tuple[Check, ...] = (
     + LABEL_CHECKS
     + TRAJECTORY_CHECKS
 )
+CHECK_BY_NAME: dict[str, Check] = {check.__name__: check for check in CHECKS}
 
 
 def lint_dataset(
@@ -106,7 +108,7 @@ def lint_dataset(
     report_dataset_path = str(input_path)
     lint_config = load_config(dataset_path, config)
     try:
-        selected_checks = _select_checks(checks)
+        selected_checks = _select_checks(checks, lint_config)
     except ValueError as exc:
         issue = make_issue(
             "select_checks",
@@ -156,7 +158,7 @@ def lint_dataset(
     issues: list[Issue] = []
     issues.extend(ctx.load_issues)
     for check in selected_checks:
-        issues.extend(check(ctx))
+        issues.extend(_apply_issue_overrides(check(ctx), lint_config))
 
     stats = _build_stats(ctx, issues)
     passed = not any(issue.severity == "error" for issue in issues)
@@ -189,7 +191,7 @@ def load_config(
         config_path = Path(config).expanduser()
     if config_path is None:
         return LintConfig()
-    return LintConfig(**_parse_simple_yaml(config_path))
+    return LintConfig(**_parse_yaml(config_path))
 
 
 def _load_context(dataset_path: Path, config: LintConfig) -> DatasetContext:
@@ -362,35 +364,96 @@ def _dataset_fingerprint(dataset_path: Path) -> str | None:
     return f"sha256:{digest.hexdigest()}"
 
 
-def _select_checks(checks: str | list[str] | tuple[str, ...] | None) -> tuple[Check, ...]:
-    if checks is None:
-        return _deduplicate_overlapping_checks(CHECKS)
-    names: list[str] = []
+def _select_checks(
+    checks: str | list[str] | tuple[str, ...] | None,
+    config: LintConfig | None = None,
+) -> tuple[Check, ...]:
+    rules = config.rules if config is not None else LintConfig().rules
+    _validate_rule_names(rules.severity.keys(), allow_groups=False, context="severity override")
+    names: list[str] | None = None
     if isinstance(checks, str):
+        names = []
         names.extend(name.strip().lower() for name in checks.split(",") if name.strip())
-    else:
+    elif checks is not None:
+        names = []
         for item in checks:
             names.extend(name.strip().lower() for name in item.split(",") if name.strip())
-    if not names or names == ["all"]:
-        return _deduplicate_overlapping_checks(CHECKS)
+    elif rules.enabled is not None:
+        names = [name.strip().lower() for name in rules.enabled if name.strip()]
 
+    if names is None or (checks is not None and not names):
+        selected = list(CHECKS)
+    elif not names:
+        selected = []
+    else:
+        selected = list(_checks_for_rule_names(names, allow_all=True))
+    disabled = set(
+        _checks_for_rule_names(
+            [name.strip().lower() for name in rules.disabled if name.strip()],
+            allow_all=True,
+        )
+    )
+    if disabled:
+        selected = [check for check in selected if check not in disabled]
+    return _deduplicate_overlapping_checks(tuple(selected))
+
+
+def _checks_for_rule_names(names: list[str], *, allow_all: bool) -> tuple[Check, ...]:
     selected: list[Check] = []
     seen: set[Check] = set()
     for name in names:
-        group: tuple[Check, ...]
-        if name == "all":
-            group = CHECKS
-        else:
-            maybe_group = CHECK_GROUPS.get(name)
-            if maybe_group is None:
-                valid = ", ".join(sorted([*CHECK_GROUPS, "all"]))
-                raise ValueError(f"Unknown check group '{name}'. Valid groups: {valid}.")
-            group = maybe_group
+        group = _rule_group_or_check(name, allow_all=allow_all)
         for check in group:
             if check not in seen:
                 selected.append(check)
                 seen.add(check)
-    return _deduplicate_overlapping_checks(tuple(selected))
+    return tuple(selected)
+
+
+def _rule_group_or_check(name: str, *, allow_all: bool) -> tuple[Check, ...]:
+    if allow_all and name == "all":
+        return CHECKS
+    maybe_group = CHECK_GROUPS.get(name)
+    if maybe_group is not None:
+        return maybe_group
+    maybe_check = CHECK_BY_NAME.get(name)
+    if maybe_check is not None:
+        return (maybe_check,)
+    valid_groups = ", ".join(sorted([*CHECK_GROUPS, *(["all"] if allow_all else [])]))
+    valid_checks = ", ".join(sorted(CHECK_BY_NAME))
+    raise ValueError(
+        f"Unknown check group '{name}'. Valid groups: {valid_groups}. "
+        f"Valid checks: {valid_checks}."
+    )
+
+
+def _validate_rule_names(
+    names: Any, *, allow_groups: bool, context: str
+) -> None:
+    valid_names = {*CHECK_BY_NAME}
+    if allow_groups:
+        valid_names.update(CHECK_GROUPS)
+    for raw_name in names:
+        name = str(raw_name).lower()
+        if name not in valid_names:
+            valid = ", ".join(sorted(valid_names))
+            raise ValueError(f"Unknown {context} '{raw_name}'. Valid names: {valid}.")
+
+
+def _apply_issue_overrides(issues: list[Issue], config: LintConfig) -> list[Issue]:
+    overrides = {name.lower(): severity for name, severity in config.rules.severity.items()}
+    if not overrides:
+        return issues
+    adjusted: list[Issue] = []
+    for issue in issues:
+        severity = overrides.get(issue.check_name)
+        if severity is None:
+            adjusted.append(issue)
+            continue
+        metadata = dict(issue.metadata)
+        metadata["original_severity"] = issue.severity
+        adjusted.append(issue.model_copy(update={"severity": severity, "metadata": metadata}))
+    return adjusted
 
 
 def _deduplicate_overlapping_checks(selected: tuple[Check, ...]) -> tuple[Check, ...]:
@@ -405,7 +468,7 @@ def _deduplicate_overlapping_checks(selected: tuple[Check, ...]) -> tuple[Check,
 def validate_checks(checks: str | list[str] | tuple[str, ...] | None) -> None:
     """Raise ``ValueError`` when a check selection is not valid."""
 
-    _select_checks(checks)
+    _select_checks(checks, LintConfig())
 
 
 def _select_adapter(dataset_path: Path, adapter: str) -> DatasetAdapter:
@@ -414,6 +477,22 @@ def _select_adapter(dataset_path: Path, adapter: str) -> DatasetAdapter:
     if adapter == "auto" and not dataset_path.exists():
         return FolderAdapter()
     return get_adapter(dataset_path, adapter)
+
+
+def _parse_yaml(path: Path) -> dict[str, Any]:
+    try:
+        yaml = import_module("yaml")
+    except ImportError:
+        return _parse_simple_yaml(path)
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise ValueError(f"Could not parse config YAML {path}: {exc}.") from exc
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise ValueError(f"Config YAML {path} must contain a mapping at the top level.")
+    return cast(dict[str, Any], raw)
 
 
 def _parse_simple_yaml(path: Path) -> dict[str, Any]:

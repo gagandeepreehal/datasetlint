@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from datasetlint.adapters.argoverse2 import Argoverse2Adapter
 from datasetlint.adapters.base import (
     AdapterDetection,
     AdapterInfo,
@@ -32,12 +33,15 @@ from datasetlint.adapters.folder import FolderAdapter
 from datasetlint.adapters.generic import GenericFolderAdapter
 from datasetlint.adapters.huggingface import HuggingFaceAdapter
 from datasetlint.adapters.kitti import KittiAdapter
+from datasetlint.adapters.lerobot import LeRobotAdapter
 from datasetlint.adapters.mcap import MCAPAdapter
 from datasetlint.adapters.nuscenes import NuScenesAdapter
 from datasetlint.adapters.registry import (
+    adapter_entry_point_errors,
     available_adapters,
     detect_adapter,
     detect_adapters,
+    discover_entry_point_adapters,
     list_adapter_info,
     list_adapters,
     load_dataset,
@@ -73,6 +77,7 @@ __all__ = [
     "AdapterValidationError",
     "AdapterValidationReport",
     "AnnotationRecord",
+    "Argoverse2Adapter",
     "CalibrationRecord",
     "CocoAdapter",
     "DatasetAdapter",
@@ -83,6 +88,7 @@ __all__ = [
     "GenericFolderAdapter",
     "HuggingFaceAdapter",
     "KittiAdapter",
+    "LeRobotAdapter",
     "MCAPAdapter",
     "NuScenesAdapter",
     "ROSBagAdapter",
@@ -91,9 +97,11 @@ __all__ = [
     "SequenceRecord",
     "UnsupportedDatasetFeature",
     "WaymoAdapter",
+    "adapter_entry_point_errors",
     "available_adapters",
     "detect_adapter",
     "detect_adapters",
+    "discover_entry_point_adapters",
     "get_adapter",
     "get_adapter_by_name",
     "list_adapter_info",

@@ -262,16 +262,17 @@ def _parse_rosbag_units(
     if truncated:
         warnings.append(f"ROS bag message parsing stopped at max_rows={max_messages}.")
 
+    all_topics = sorted(set(topic_types) | set(topic_counts))
     sensors = [
         SensorStream(
             sensor_id=topic,
             sensor_type=_topic_type(topic),
             name=topic,
             modality="ros_topic",
-            frame_count=count,
+            frame_count=topic_counts.get(topic, 0),
             metadata={"topic": topic, "msgtype": topic_types.get(topic, "")},
         )
-        for topic, count in sorted(topic_counts.items())
+        for topic in all_topics
     ]
     sequences = [
         SequenceRecord(
@@ -295,8 +296,12 @@ def _parse_rosbag_units(
             "bag_files": [relative_to_root(dataset_root, bag) for bag in bags],
             "message_count": len(frames),
             "topics": [
-                {"name": topic, "msgtype": topic_types.get(topic, ""), "message_count": count}
-                for topic, count in sorted(topic_counts.items())
+                {
+                    "name": topic,
+                    "msgtype": topic_types.get(topic, ""),
+                    "message_count": topic_counts.get(topic, 0),
+                }
+                for topic in all_topics
             ],
             "truncated": truncated,
         },

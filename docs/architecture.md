@@ -19,7 +19,7 @@ The core API loads those files into `DatasetContext`, applies selected check gro
 
 ## Normalized DatasetManifest
 
-Adapters for generic folders, COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, and Hugging Face produce a normalized `DatasetManifest`. The manifest captures common records:
+Adapters for generic folders, COCO, KITTI, Argoverse 2, LeRobot, nuScenes, Waymo, ROS bag, MCAP, Hugging Face, and plugin-provided formats produce a normalized `DatasetManifest`. The manifest captures common records:
 
 - sequences
 - frames
@@ -44,8 +44,8 @@ Adapter validation reports are explicit about scope:
 
 Today, MCAP, ROS bag, and Waymo default to index-level for the base install, but `--deep` uses optional parsers to extract external-format metadata:
 
-- MCAP: channels, schemas, and message timestamps.
-- ROS bag: topics, message types, counts, and timestamps.
+- MCAP: channels, schemas, message timestamps, dropped-topic-style gaps where observable, and cross-topic sync diagnostics.
+- ROS bag: topics, message types, counts, timestamps, dropped topics, and cross-topic sync diagnostics.
 - Waymo: TFRecord frame, sensor, label, and calibration metadata.
 
 If a requested deep parser fails to parse the input, adapter validation records the parser error, reports `valid: false`, and the CLI exits with code `1`. A deep parse failure should not look like a successful deep validation pass.
