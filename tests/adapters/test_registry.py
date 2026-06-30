@@ -114,7 +114,7 @@ def test_each_adapter_loads_json_serializable_manifest(fixture: str, adapter: st
         ("waymo_index_only", "waymo", "index-level"),
         ("rosbag_index_only", "rosbag", "index-level"),
         ("mcap_index_only", "mcap", "index-level"),
-        ("hf_cache_like", "huggingface", "manifest-level"),
+        ("hf_cache_like", "huggingface", "index-level"),
     ],
 )
 def test_adapter_validation_reports_scope_and_limitations(
@@ -159,3 +159,21 @@ def test_adapter_entry_point_discovery(monkeypatch):
     discover_entry_point_adapters(force=True)
 
     assert {adapter.name for adapter in list_adapters()} >= {"pluginformat"}
+
+
+def test_third_party_adapter_template_declares_entry_point_and_validates(monkeypatch):
+    template_root = Path(__file__).resolve().parents[2] / "examples" / "third_party_adapter"
+    pyproject = (template_root / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert '[project.entry-points."datasetlint.adapters"]' in pyproject
+    assert 'example_telemetry = "datasetlint_example_adapter:ExampleTelemetryAdapter"' in pyproject
+
+    monkeypatch.syspath_prepend(str(template_root / "src"))
+    from datasetlint_example_adapter import ExampleTelemetryAdapter
+
+    report = ExampleTelemetryAdapter().validate(template_root / "sample_dataset")
+
+    assert report.valid is True
+    assert report.adapter_name == "example_telemetry"
+    assert report.coverage["common_rule_inputs"]["frames"] is True
+    assert "common timestamp consistency" in report.checked

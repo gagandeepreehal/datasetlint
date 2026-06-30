@@ -59,6 +59,7 @@ def test_waymo_deep_validation_uses_parser_metadata(monkeypatch):
                     sequence_id="segment-000001",
                     timestamp=0.001,
                     sensor_id="camera_1",
+                    metadata={"camera_image_count": 1, "laser_count": 1},
                 )
             ],
             sensors=[
@@ -99,9 +100,13 @@ def test_waymo_deep_validation_uses_parser_metadata(monkeypatch):
     assert report.coverage["index_only"] is False
     assert report.coverage["annotations"] is True
     assert report.coverage["calibration"] is True
+    assert report.coverage["payload_metadata"] is True
     assert report.coverage["common_rule_inputs"]["frames"] is True
+    assert "Waymo deep payload diagnostics" in report.checked
     assert "common timestamp consistency" in report.checked
     assert report.stats["frame_count"] == 1
+    assert report.stats["camera_image_payload_count"] == 1
+    assert report.stats["lidar_payload_count"] == 1
     assert report.stats["common_rule_stats"]["frame_count"] == 1
 
 

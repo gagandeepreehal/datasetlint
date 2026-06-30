@@ -11,12 +11,22 @@ It runs locally on folder-based datasets with Python, CSV, and JSON. It does not
 
 Documentation: [DatasetLint docs](https://gagandeepreehal.github.io/datasetlint/)
 
+Docs map:
+
+| Need | Start here |
+| --- | --- |
+| First install and example run | [Getting Started](https://gagandeepreehal.github.io/datasetlint/getting-started/) |
+| Exact CLI commands and exit codes | [CLI Reference](https://gagandeepreehal.github.io/datasetlint/cli/) |
+| JSON, Markdown, and HTML reports | [Reports](https://gagandeepreehal.github.io/datasetlint/reports/) |
+| External formats and adapter limits | [Adapters](https://gagandeepreehal.github.io/datasetlint/adapters/) |
+| Contributor workflow | [Development](https://gagandeepreehal.github.io/datasetlint/development/) |
+
 ## Current Limitations
 
 - Deep validation works best on the native DatasetLint folder format.
 - Adapters provide manifest inspection, manifest export, and adapter validation for external formats.
-- MCAP, ROS bag, and Waymo default to lightweight index mode; install the matching extra and pass `--deep` to parse channel/topic/frame metadata. If a requested deep parser cannot parse the input, validation fails instead of reporting a valid deep pass.
-- Hugging Face validation uses cache metadata or guarded sampling rather than scanning entire remote datasets by default.
+- MCAP, ROS bag, Waymo, and Hugging Face default to lightweight index/cache metadata; install the matching extra and pass `--deep` to parse channel/topic/frame metadata or sampled Hugging Face rows. If a requested deep parser cannot parse the input, validation fails instead of reporting a valid deep pass.
+- Hugging Face `--deep` uses bounded row sampling rather than scanning entire remote datasets by default.
 - DatasetLint is not a dataset management platform, model evaluation framework, simulator, replay tool, or data host.
 - Large-dataset performance has not been benchmarked yet.
 - Adapter support is strongest at metadata/manifest validation; some payload formats still need format-specific decoders for full semantic checks.
@@ -247,7 +257,7 @@ datasetlint inspect DATASET_PATH --auto-detect
 datasetlint validate DATASET_PATH --adapter kitti
 datasetlint validate DATASET_PATH --adapter mcap --deep
 datasetlint inspect DATASET_PATH --adapter waymo --deep --max-rows 1000
-datasetlint validate hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
+datasetlint validate hf://namespace/dataset --adapter huggingface --split train --deep --max-rows 1000
 datasetlint export-manifest DATASET_PATH --adapter nuscenes --output manifest.json
 ```
 
@@ -416,8 +426,8 @@ More CI templates, including report artifacts and dataset diffs, are in [docs/ci
 | Waymo | `waymo` | index + optional deep metadata | optional Waymo/TensorFlow package | TFRecord indexing by default; `--deep` parses frame, label, sensor, and calibration metadata, not image/lidar payload bytes |
 | ROS bag | `rosbag` | index + optional deep metadata | optional `rosbags` | ROS1/ROS2 file indexing by default; `--deep` parses topics, message types, counts, and timestamps |
 | MCAP | `mcap` | index + optional deep metadata | optional `mcap` | File indexing by default; `--deep` parses channels, schemas, and message timestamps |
-| Hugging Face | `huggingface` | supported | `datasets` | Cache/local metadata works without the extra; guarded remote sampling needs `datasets`; sampled label/bbox-like rows feed common annotation inputs |
-| Custom adapters | `datasetlint.adapters` entry point | supported | adapter-specific | Install a package exposing a DatasetLint adapter entry point |
+| Hugging Face | `huggingface` | index + optional deep sampling | optional `datasets` | Cache/local metadata by default; `--deep` samples rows, projects label/bbox-like columns, and fails malformed sampled bbox payloads |
+| Custom adapters | `datasetlint.adapters` entry point | supported | adapter-specific | Install a package exposing a DatasetLint adapter entry point; see `examples/third_party_adapter` for a minimal template |
 
 ## Roadmap
 
@@ -430,7 +440,7 @@ Near term:
 
 Medium term:
 
-- modality-specific decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payloads, richer Argoverse 2/LeRobot payload semantics, richer nuScenes payload semantics, and richer Hugging Face row schemas
+- modality-specific decoding beyond current metadata manifests: MCAP and ROS bag message payloads, Waymo image/lidar payload bytes, richer Argoverse 2/LeRobot payload semantics, richer nuScenes payload semantics, and dataset-specific Hugging Face row schemas
 - conversion helpers from normalized manifests to the native lintable folder format
 - richer sensor synchronization checks
 - richer static HTML report styling while keeping reports dependency-free

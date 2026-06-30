@@ -1,0 +1,2 @@
+{"frame_id": "000001", "timestamp": 1.0, "camera_path": "images/000001.jpg", "lidar_path": "lidar/000001.bin", "label": "clear"}
+{"frame_id": "000002", "timestamp": 1.1, "camera_path": "images/000002.jpg", "lidar_path": "lidar/000002.bin", "label": "occupied"}

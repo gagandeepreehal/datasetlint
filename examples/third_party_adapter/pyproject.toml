@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datasetlint-example-adapter"
+version = "0.1.0"
+description = "Minimal third-party DatasetLint adapter template."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+  "datasetlint>=0.1.0",
+]
+
+[project.entry-points."datasetlint.adapters"]
+example_telemetry = "datasetlint_example_adapter:ExampleTelemetryAdapter"
+
+[tool.setuptools.packages.find]
+where = ["src"]

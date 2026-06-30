@@ -97,6 +97,17 @@ datasetlint export-manifest tests/fixtures/coco_dataset --adapter coco --output 
 
 These fixtures are synthetic placeholders. They exercise adapter layout parsing without bundling real COCO, KITTI, nuScenes, Waymo, ROS bag, MCAP, or Hugging Face datasets.
 
+## Third-Party Adapter Template
+
+`examples/third_party_adapter` is a minimal installable package that registers an
+adapter through the `datasetlint.adapters` entry-point group:
+
+```bash
+python -m pip install -e examples/third_party_adapter
+datasetlint adapters list
+datasetlint validate examples/third_party_adapter/sample_dataset --adapter example_telemetry
+```
+
 Redirect JSON or Markdown output when you want artifacts:
 
 ```bash

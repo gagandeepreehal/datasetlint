@@ -19,6 +19,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Thi
 - Deep MCAP and ROS bag timestamp diagnostics for dropped topics and cross-topic desync.
 - Example datasets for passing and failing validation paths.
 - MkDocs documentation workflow and publishing workflow metadata.
+- Trusted publishing workflow paths for TestPyPI dry runs and PyPI releases.
 
 ### Docs
 

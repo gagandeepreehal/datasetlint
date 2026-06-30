@@ -505,15 +505,18 @@ _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
         ],
     },
     "huggingface": {
-        "validation_mode": "manifest-level",
-        "checked": ["cache metadata or remote dataset metadata", "split/sample availability"],
+        "validation_mode": "index-level",
+        "checked": ["cache metadata or remote dataset metadata", "split availability"],
         "not_checked": [
+            "sampled row payloads; use --deep with datasetlint[hf]",
             "full dataset scan",
             "robotics calibration",
             "sensor synchronization",
             "label geometry",
         ],
-        "limitations": ["Hugging Face validation samples or indexes dataset metadata."],
+        "limitations": [
+            "Hugging Face validation is index-level unless --deep samples rows."
+        ],
     },
 }
 

@@ -2,17 +2,27 @@ name: Publish
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Package index to publish to"
+        required: true
+        default: testpypi
+        type: choice
+        options:
+          - testpypi
+          - pypi
   release:
     types: [published]
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
-  publish:
+  build:
+    if: github.event_name != 'workflow_dispatch' || inputs.target != 'pypi' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
-    environment: pypi
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,5 +34,59 @@ jobs:
         run: python -m build
       - name: Check distributions
         run: python -m twine check dist/*
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions
+          path: dist/*
+          if-no-files-found: error
+
+  publish-testpypi:
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/datasetlint/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: dist
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  reject-untagged-pypi-dispatch:
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'pypi' && github.ref_type != 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject non-tag PyPI publish
+        run: |
+          echo "Manual PyPI publishing must be dispatched from a tag ref."
+          exit 1
+
+  publish-pypi:
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi' && github.ref_type == 'tag')
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/datasetlint/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-distributions
+          path: dist
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1

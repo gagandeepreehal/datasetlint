@@ -32,7 +32,7 @@ Issue severities are `error`, `warning`, and `info`. Validation passes when ther
 
 An adapter detects, loads, and validates a dataset format. The native `folder` adapter feeds the existing rule engine. Other adapters produce a normalized `DatasetManifest` and `AdapterValidationReport` for generic folders, COCO, KITTI, Argoverse 2, LeRobot, nuScenes, Waymo, ROS bag, MCAP, Hugging Face, and plugin-provided datasets.
 
-Some adapters intentionally default to lightweight mode. Waymo, ROS bag, and MCAP index files by default; with the matching optional dependency installed, `--deep` parses metadata from records, topics, channels, schemas, labels, timestamps, and calibration where the source format exposes it.
+Some adapters intentionally default to lightweight mode. Waymo, ROS bag, MCAP, and Hugging Face index files or cache metadata by default; with the matching optional dependency installed, `--deep` parses metadata from records, topics, channels, schemas, labels, timestamps, calibration, or sampled Hugging Face rows where the source format exposes it.
 
 ## Manifest
 

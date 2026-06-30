@@ -1,0 +1,121 @@
+/*
+ * Small readability layer over the built-in Read the Docs theme.
+ * Keep this dependency-free so `mkdocs build --strict` works from source.
+ */
+
+:root {
+  --datasetlint-accent: #0f766e;
+  --datasetlint-accent-dark: #115e59;
+  --datasetlint-border: #d9e2e7;
+  --datasetlint-bg-soft: #f6f8fa;
+  --datasetlint-text: #1f2933;
+}
+
+body {
+  color: var(--datasetlint-text);
+}
+
+.wy-nav-content {
+  max-width: 1080px;
+}
+
+.wy-side-nav-search {
+  background-color: var(--datasetlint-accent-dark);
+}
+
+.wy-side-nav-search > a,
+.wy-side-nav-search .wy-dropdown > a {
+  color: #fff;
+}
+
+.wy-menu-vertical a:hover {
+  background-color: rgba(15, 118, 110, 0.13);
+}
+
+.wy-menu-vertical li.current > a,
+.wy-menu-vertical li.on a {
+  color: var(--datasetlint-accent-dark);
+}
+
+.rst-content h1,
+.rst-content h2,
+.rst-content h3,
+.rst-content h4 {
+  letter-spacing: 0;
+}
+
+.rst-content h1 {
+  margin-bottom: 0.7rem;
+}
+
+.rst-content h2 {
+  border-top: 1px solid var(--datasetlint-border);
+  padding-top: 1rem;
+}
+
+.rst-content .section > p,
+.rst-content .section > ul,
+.rst-content .section > ol {
+  max-width: 78ch;
+}
+
+.rst-content table.docutils {
+  width: 100%;
+  border: 1px solid var(--datasetlint-border);
+}
+
+.rst-content table.docutils thead th {
+  background: var(--datasetlint-bg-soft);
+  color: #243b53;
+}
+
+.rst-content table.docutils td,
+.rst-content table.docutils th {
+  white-space: normal;
+  vertical-align: top;
+}
+
+.rst-content code.literal,
+.rst-content tt.literal {
+  color: #0f172a;
+  background: #eef6f5;
+  border: 1px solid #cce7e3;
+  border-radius: 4px;
+  padding: 0.08rem 0.25rem;
+}
+
+.rst-content div[class^="highlight"],
+.rst-content pre.literal-block {
+  border: 1px solid var(--datasetlint-border);
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.rst-content div.admonition {
+  border-radius: 6px;
+  border-color: var(--datasetlint-border);
+  box-shadow: none;
+}
+
+.rst-content div.admonition p.admonition-title {
+  background: var(--datasetlint-accent);
+}
+
+.rst-content a {
+  color: #0b7285;
+}
+
+.rst-content a:hover {
+  color: var(--datasetlint-accent-dark);
+}
+
+@media screen and (max-width: 768px) {
+  .wy-nav-content {
+    padding: 1.2rem;
+  }
+
+  .rst-content table.docutils {
+    display: block;
+    overflow-x: auto;
+  }
+}

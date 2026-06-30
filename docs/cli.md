@@ -94,7 +94,7 @@ Purpose: list adapter availability or report which adapters detect a dataset pat
 ```bash
 datasetlint inspect DATASET_PATH --adapter coco
 datasetlint inspect DATASET_PATH --auto-detect
-datasetlint inspect hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
+datasetlint inspect hf://namespace/dataset --adapter huggingface --split train --deep --max-rows 1000
 datasetlint inspect DATASET_PATH --adapter waymo --deep --max-rows 1000
 datasetlint inspect DATASET_PATH --format json
 ```
@@ -109,7 +109,7 @@ limitations, and warnings.
 datasetlint validate DATASET_PATH --adapter kitti
 datasetlint validate DATASET_PATH --auto-detect
 datasetlint validate DATASET_PATH --adapter mcap --deep
-datasetlint validate hf://namespace/dataset --adapter huggingface --split train --max-rows 1000
+datasetlint validate hf://namespace/dataset --adapter huggingface --split train --deep --max-rows 1000
 datasetlint validate DATASET_PATH --format json
 ```
 
@@ -119,11 +119,12 @@ separate from `datasetlint lint`, which runs the native folder rule engine.
 Validation output includes `coverage.common_rule_inputs` and
 `stats.common_rule_stats` when decoded adapter records can feed shared manifest
 checks.
-Use `--deep` with MCAP, ROS bag, or Waymo after installing the matching extra
-when you want parser-backed channel/topic/frame metadata instead of only file
-indexing. If the requested deep parser is present but cannot parse the input,
-validation reports `valid: false` and exits with code `1`; parser warnings are
-not treated as successful deep validation.
+Use `--deep` with MCAP, ROS bag, Waymo, or Hugging Face after installing the
+matching extra when you want parser-backed channel/topic/frame metadata or
+sampled Hugging Face row diagnostics instead of only file/cache indexing. If the
+requested deep parser is missing or cannot parse the input, validation reports
+`valid: false` and exits with code `1`; parser warnings are not treated as
+successful deep validation.
 
 ## Export Manifest
 

@@ -140,6 +140,13 @@ class WaymoAdapter(DatasetAdapter):
             "annotation_count": len(manifest.annotations),
             "calibration_count": len(manifest.calibration),
         }
+        if deep:
+            diagnostics = _waymo_deep_diagnostics(manifest)
+            scope["checked"] = [*scope["checked"], *diagnostics["checked"]]
+            errors.extend(diagnostics["errors"])
+            warnings.extend(diagnostics["warnings"])
+            coverage.update(diagnostics["coverage"])
+            stats.update(diagnostics["stats"])
         scope, errors, warnings, coverage, stats = merge_common_rule_result(
             scope=scope,
             errors=errors,
@@ -407,6 +414,54 @@ def _waymo_scope(deep: bool, limitations: list[str]) -> dict[str, Any]:
     }
 
 
+def _waymo_deep_diagnostics(manifest: DatasetManifest) -> dict[str, Any]:
+    camera_image_count = sum(
+        _metadata_int(frame.metadata, "camera_image_count") for frame in manifest.frames
+    )
+    laser_count = sum(_metadata_int(frame.metadata, "laser_count") for frame in manifest.frames)
+    frames_without_payload_metadata = sum(
+        1
+        for frame in manifest.frames
+        if _metadata_int(frame.metadata, "camera_image_count") == 0
+        and _metadata_int(frame.metadata, "laser_count") == 0
+    )
+    errors: list[str] = []
+    warnings: list[str] = []
+    if not manifest.frames:
+        errors.append("Deep Waymo parsing decoded no frame records.")
+    elif frames_without_payload_metadata == len(manifest.frames):
+        warnings.append(
+            "No Waymo camera image or lidar payload metadata was decoded from sampled frames. "
+            "Location: frame payload summaries. Fix: inspect the TFRecord parser output or "
+            "raise --max-rows if the sample contains only metadata-only frames."
+        )
+    elif frames_without_payload_metadata:
+        warnings.append(
+            f"{frames_without_payload_metadata} Waymo frame(s) have no decoded camera image "
+            "or lidar payload metadata. Location: frame payload summaries. Fix: inspect "
+            "source frames for dropped sensor payloads."
+        )
+    if manifest.frames and not manifest.sensors:
+        warnings.append(
+            "Deep Waymo parsing decoded frames but no sensor streams. Location: frame sensor "
+            "metadata. Fix: inspect camera_images and lasers in the source TFRecord frames."
+        )
+    return {
+        "checked": ["Waymo deep payload diagnostics"],
+        "errors": errors,
+        "warnings": warnings,
+        "coverage": {
+            "payload_metadata": bool(camera_image_count or laser_count),
+            "frame_payload_summaries": bool(manifest.frames),
+        },
+        "stats": {
+            "camera_image_payload_count": camera_image_count,
+            "lidar_payload_count": laser_count,
+            "frames_without_payload_metadata": frames_without_payload_metadata,
+        },
+    }
+
+
 def _context_name(frame: object) -> str:
     context = getattr(frame, "context", None)
     return _object_text(context, "name") if context is not None else ""
@@ -554,6 +609,11 @@ def _object_text(value: object, name: str, *, default: str = "") -> str:
 
 def _object_value(value: object, name: str, default: object) -> object:
     return getattr(value, name, default)
+
+
+def _metadata_int(metadata: dict[str, Any], name: str) -> int:
+    value = metadata.get(name, 0)
+    return int(value) if isinstance(value, int) else 0
 
 
 def _sensor_id(prefix: str, name: int) -> str:
