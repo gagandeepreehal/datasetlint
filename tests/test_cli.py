@@ -73,7 +73,7 @@ def test_cli_version_flag():
     result = runner.invoke(app, ["--version"])
 
     assert result.exit_code == 0
-    assert result.stdout.strip() == "datasetlint 0.1.0"
+    assert result.stdout.strip() == "datasetlint 0.0.1"
 
 
 def test_cli_lint_alias(tmp_path):
@@ -97,7 +97,7 @@ def test_cli_report_writes_json(tmp_path):
 
     assert result.exit_code == 0
     payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["datasetlint_version"] == "0.1.0"
+    assert payload["datasetlint_version"] == "0.0.1"
     assert payload["findings"] == payload["issues"]
     assert payload["adapter"]["name"] == "folder"
 
@@ -184,7 +184,7 @@ def test_release_checklist_cli_smoke_commands():
     )
 
     assert version_result.exit_code == 0
-    assert version_result.stdout.strip() == "datasetlint 0.1.0"
+    assert version_result.stdout.strip() == "datasetlint 0.0.1"
     assert help_result.exit_code == 0
     assert "Usage:" in help_result.stdout
     assert minimal_result.exit_code == 0

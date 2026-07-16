@@ -4,7 +4,7 @@ All notable changes to DatasetLint will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This repository has no Git tags in the current checkout, so historical releases are not listed as shipped.
 
-## Unreleased
+## [0.0.1] - 2026-07-17
 
 ### Added
 

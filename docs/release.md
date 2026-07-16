@@ -16,8 +16,8 @@ through trusted publishing. Manual `target: pypi` dispatch is only for replaying
 a release from a tag ref.
 
 ```bash
-git tag -a v0.1.0 -m "DatasetLint v0.1.0"
-git push origin v0.1.0
+git tag -a v0.0.1 -m "DatasetLint v0.0.1"
+git push origin v0.0.1
 ```
 
 See `PUBLISHING.md` for trusted publisher setup and the exact TestPyPI install

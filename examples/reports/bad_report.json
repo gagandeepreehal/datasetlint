@@ -105,7 +105,7 @@
       "ego": 3
     }
   },
-  "datasetlint_version": "0.1.0",
+  "datasetlint_version": "0.0.1",
   "findings": [
     {
       "check_name": "check_missing_sensor_files",
