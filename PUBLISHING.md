@@ -57,19 +57,19 @@ python -m venv /tmp/datasetlint-testpypi
 /tmp/datasetlint-testpypi/bin/python -m pip install \
   --index-url https://test.pypi.org/simple/ \
   --extra-index-url https://pypi.org/simple/ \
-  "datasetlint==0.0.1"
+  "datasetlint==0.0.2"
 /tmp/datasetlint-testpypi/bin/datasetlint --version
 ```
 
-Use the release version instead of `0.0.1`.
+Use the release version instead of `0.0.2`.
 
 ## Tag And Publish To PyPI
 
 Create and push an annotated tag:
 
 ```bash
-git tag -a v0.0.1 -m "DatasetLint v0.0.1"
-git push origin v0.0.1
+git tag -a 0.0.2 -m "DatasetLint 0.0.2"
+git push origin 0.0.2
 ```
 
 Then draft and publish a GitHub release for that tag. The `Publish` workflow

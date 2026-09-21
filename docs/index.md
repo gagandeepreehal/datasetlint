@@ -9,9 +9,8 @@ calibration mistakes, and adapter ingestion failures while the dataset is still
 cheap to fix.
 
 !!! note "Install status"
-    DatasetLint currently documents source installs from this repository. Do not
-    use `pip install datasetlint` as the default path until a public package
-    release exists.
+    DatasetLint is available from PyPI with `pip install datasetlint`. Install
+    from source when contributing or testing unreleased changes.
 
 ## First Five Minutes
 
@@ -86,7 +85,7 @@ show the issue fields you will see in real projects.
 
 ## Current Status
 
-DatasetLint v0.1 supports deep rule validation for its native folder format and
+DatasetLint v0.0.2 supports deep rule validation for its native folder format and
 normalized adapter manifests for generic folders, COCO, KITTI, Argoverse 2,
 LeRobot, nuScenes, Waymo, ROS bag, MCAP, Hugging Face, and plugin-provided
 datasets.

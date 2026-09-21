@@ -422,14 +422,11 @@ def _rule_group_or_check(name: str, *, allow_all: bool) -> tuple[Check, ...]:
     valid_groups = ", ".join(sorted([*CHECK_GROUPS, *(["all"] if allow_all else [])]))
     valid_checks = ", ".join(sorted(CHECK_BY_NAME))
     raise ValueError(
-        f"Unknown check group '{name}'. Valid groups: {valid_groups}. "
-        f"Valid checks: {valid_checks}."
+        f"Unknown check group '{name}'. Valid groups: {valid_groups}. Valid checks: {valid_checks}."
     )
 
 
-def _validate_rule_names(
-    names: Any, *, allow_groups: bool, context: str
-) -> None:
+def _validate_rule_names(names: Any, *, allow_groups: bool, context: str) -> None:
     valid_names = {*CHECK_BY_NAME}
     if allow_groups:
         valid_names.update(CHECK_GROUPS)

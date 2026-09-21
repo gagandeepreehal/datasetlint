@@ -126,8 +126,7 @@ def test_huggingface_deep_validation_does_not_warn_for_id_label_bbox_sensors(
     assert report.stats["common_rule_stats"]["sensor_count"] == 1
     assert report.stats["rows_without_primary_payload"] == 0
     assert not any(
-        "has no decoded frame or message records" in warning
-        for warning in report.warnings
+        "has no decoded frame or message records" in warning for warning in report.warnings
     )
 
 

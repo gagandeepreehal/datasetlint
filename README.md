@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/ci.yml)
 [![Docs](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml/badge.svg)](https://github.com/gagandeepreehal/datasetlint/actions/workflows/docs.yml)
+[![Downloads](https://static.pepy.tech/badge/datasetlint)](https://pepy.tech/project/datasetlint)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -105,7 +106,7 @@ Concrete native-folder checks include:
 
 ## Current Capabilities
 
-DatasetLint v0.1 supports deep rule validation for the native folder dataset format and normalized manifest workflows for common external dataset formats. Current capabilities include:
+DatasetLint v0.0.2 supports deep rule validation for the native folder dataset format and normalized manifest workflows for common external dataset formats. Current capabilities include:
 
 - required `metadata.json` and `calibration.json`
 - empty CSV files, broken referenced paths, and duplicate filenames
@@ -126,7 +127,13 @@ DatasetLint v0.1 supports deep rule validation for the native folder dataset for
 
 ## Installation
 
-DatasetLint requires Python 3.10 or newer. Install from source:
+DatasetLint requires Python 3.10 or newer. Install the latest release from PyPI:
+
+```bash
+python -m pip install datasetlint
+```
+
+For development, install from source:
 
 ```bash
 git clone https://github.com/gagandeepreehal/datasetlint.git
@@ -138,8 +145,6 @@ python -m pip install -e ".[dev,docs]"
 ```
 
 Use `python3.10`, `python3.11`, or `python3.12` if that is the executable name on your machine. The macOS system `python3` may be Python 3.9, which is too old for this project.
-
-This repository has publishing metadata and a publish workflow, but this checkout has no release tags. Until the first PyPI release is published, use the source install above instead of `pip install datasetlint`.
 
 Adapter extras are opt-in so the base install stays lightweight:
 

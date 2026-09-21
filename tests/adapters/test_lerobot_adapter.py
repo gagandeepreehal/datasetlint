@@ -18,9 +18,7 @@ def test_lerobot_adapter_indexes_local_dataset():
         "observation.images.front",
     }
     assert manifest.annotations[0].annotation_type == "lerobot_task"
-    assert manifest.splits == {
-        "train": ["000000/data", "000000/observation.images.front"]
-    }
+    assert manifest.splits == {"train": ["000000/data", "000000/observation.images.front"]}
 
 
 def test_lerobot_validation_reports_episode_payloads():
@@ -35,9 +33,7 @@ def test_lerobot_adapter_parses_range_style_splits(tmp_path: Path):
     dataset_root = tmp_path / "lerobot"
     meta_dir = dataset_root / "meta"
     data_dir = dataset_root / "data" / "chunk-000"
-    video_dir = (
-        dataset_root / "videos" / "chunk-000" / "observation.images.front"
-    )
+    video_dir = dataset_root / "videos" / "chunk-000" / "observation.images.front"
     meta_dir.mkdir(parents=True)
     data_dir.mkdir(parents=True)
     video_dir.mkdir(parents=True)

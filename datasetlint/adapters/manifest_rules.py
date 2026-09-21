@@ -71,9 +71,7 @@ def merge_common_rule_result(
     """Merge common-rule output into an adapter validation report payload."""
 
     merged_scope = dict(scope)
-    merged_scope["checked"] = _unique_strings(
-        [*list(scope.get("checked", [])), *result.checked]
-    )
+    merged_scope["checked"] = _unique_strings([*list(scope.get("checked", [])), *result.checked])
     coverage = {**coverage, "common_rule_inputs": result.coverage}
     stats = {**stats, "common_rule_stats": result.stats}
     return (
@@ -117,9 +115,7 @@ def _check_sensor_links(
         return
     result.checked.append("common sensor links")
     sensor_ids = {sensor.sensor_id for sensor in sensors}
-    frames_by_sensor = Counter(
-        frame.sensor_id for frame in frames if frame.sensor_id is not None
-    )
+    frames_by_sensor = Counter(frame.sensor_id for frame in frames if frame.sensor_id is not None)
     for frame in frames:
         if frame.sensor_id and sensor_ids and frame.sensor_id not in sensor_ids:
             result.errors.append(
@@ -205,9 +201,7 @@ def _check_timestamps(frames: list[FrameRecord], result: ManifestRuleResult) -> 
     _check_sync(groups, result)
 
 
-def _check_sync(
-    groups: dict[str, list[tuple[int, float]]], result: ManifestRuleResult
-) -> None:
+def _check_sync(groups: dict[str, list[tuple[int, float]]], result: ManifestRuleResult) -> None:
     usable = {
         sensor_id: sorted(value for _, value in values)
         for sensor_id, values in groups.items()
@@ -273,11 +267,7 @@ def _check_annotations(manifest: DatasetManifest, result: ManifestRuleResult) ->
                 f"Annotation {annotation.annotation_id} references missing frame "
                 f"{annotation.frame_id}."
             )
-        if (
-            annotation.sequence_id
-            and sequence_ids
-            and annotation.sequence_id not in sequence_ids
-        ):
+        if annotation.sequence_id and sequence_ids and annotation.sequence_id not in sequence_ids:
             result.errors.append(
                 f"Annotation {annotation.annotation_id} references missing sequence "
                 f"{annotation.sequence_id}."
@@ -292,10 +282,7 @@ def _check_calibration(
 ) -> None:
     if not manifest.calibration and not sensors:
         return
-    if (
-        not manifest.calibration
-        and manifest.adapter_name not in CALIBRATION_EXPECTED_ADAPTERS
-    ):
+    if not manifest.calibration and manifest.adapter_name not in CALIBRATION_EXPECTED_ADAPTERS:
         return
     result.checked.append("common calibration shape")
     calibration_ids = {record.sensor_id for record in manifest.calibration}
@@ -337,15 +324,11 @@ def _check_splits(manifest: DatasetManifest, result: ManifestRuleResult) -> None
 
 def _semantic_frames(manifest: DatasetManifest) -> list[FrameRecord]:
     return [
-        frame
-        for frame in manifest.frames
-        if frame.metadata.get("indexed_tfrecord") is not True
+        frame for frame in manifest.frames if frame.metadata.get("indexed_tfrecord") is not True
     ]
 
 
-def _semantic_sensors(
-    manifest: DatasetManifest, frames: list[FrameRecord]
-) -> list[SensorStream]:
+def _semantic_sensors(manifest: DatasetManifest, frames: list[FrameRecord]) -> list[SensorStream]:
     if manifest.adapter_name == "waymo" and manifest.metadata.get("parse_mode") == "index":
         return []
     if manifest.adapter_name == "waymo" and not frames:

@@ -3,7 +3,7 @@
 - Dataset: `examples/bad_dataset`
 - Status: `failed`
 - Generated at: `2026-06-30T19:22:27+00:00`
-- DatasetLint version: `0.0.1`
+- DatasetLint version: `0.0.2`
 - Dataset fingerprint: `sha256:7b22ecb438212ec4ee2ec30052d58d5e0b4fbe1e577c7848f2b378b2591a7811`
 - Errors: `16`
 - Warnings: `14`

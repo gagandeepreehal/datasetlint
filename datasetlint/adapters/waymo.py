@@ -85,7 +85,9 @@ class WaymoAdapter(DatasetAdapter):
             splits=_splits(dataset_root, files),
             metadata={
                 "parse_mode": "index",
-                "tfrecord_files": [relative_to_root(dataset_root, file_path) for file_path in files]
+                "tfrecord_files": [
+                    relative_to_root(dataset_root, file_path) for file_path in files
+                ],
             },
             limitations=[
                 (
@@ -514,9 +516,7 @@ def _waymo_annotations(
                 annotation_type="waymo_laser_label",
                 values={
                     "num_lidar_points_in_box": _object_int(label, "num_lidar_points_in_box"),
-                    "detection_difficulty_level": _object_int(
-                        label, "detection_difficulty_level"
-                    ),
+                    "detection_difficulty_level": _object_int(label, "detection_difficulty_level"),
                 },
                 metadata={"source": "laser_labels"},
             )

@@ -445,9 +445,7 @@ def _check_table_links(manifest: DatasetManifest, errors: list[str]) -> None:
     for frame in manifest.frames:
         sample_token = frame.metadata.get("sample_token")
         if sample_token is not None and sample_tokens and str(sample_token) not in sample_tokens:
-            errors.append(
-                f"sample_data {frame.frame_id} references missing sample {sample_token}."
-            )
+            errors.append(f"sample_data {frame.frame_id} references missing sample {sample_token}.")
         ego_pose_token = frame.metadata.get("ego_pose_token")
         if (
             ego_pose_token is not None

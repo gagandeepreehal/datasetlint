@@ -200,9 +200,7 @@ class DatasetAdapter:
         if manifest is not None:
             warnings.extend(manifest.provenance.warnings)
             warnings.extend(manifest.limitations)
-        scope = validation_scope(
-            self.name, manifest.limitations if manifest is not None else []
-        )
+        scope = validation_scope(self.name, manifest.limitations if manifest is not None else [])
         coverage = _coverage_for_manifest(manifest)
         stats = _stats_for_manifest(manifest)
         if manifest is not None:
@@ -530,9 +528,7 @@ _VALIDATION_SCOPES: dict[str, dict[str, Any]] = {
             "sensor synchronization",
             "label geometry",
         ],
-        "limitations": [
-            "Hugging Face validation is index-level unless --deep samples rows."
-        ],
+        "limitations": ["Hugging Face validation is index-level unless --deep samples rows."],
     },
 }
 

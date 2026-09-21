@@ -479,22 +479,16 @@ def _huggingface_scope(deep: bool, limitations: list[str]) -> dict[str, Any]:
 
 def _huggingface_deep_diagnostics(manifest: DatasetManifest) -> dict[str, Any]:
     frame_ids = [frame.frame_id for frame in manifest.frames]
-    duplicate_ids = sorted(
-        frame_id for frame_id, count in Counter(frame_ids).items() if count > 1
-    )
+    duplicate_ids = sorted(frame_id for frame_id, count in Counter(frame_ids).items() if count > 1)
     bbox_annotations = [
-        annotation
-        for annotation in manifest.annotations
-        if annotation.annotation_type == "bbox"
+        annotation for annotation in manifest.annotations if annotation.annotation_type == "bbox"
     ]
     invalid_bboxes = [
         annotation
         for annotation in bbox_annotations
         if annotation.values.get("bbox_valid") is False
     ]
-    missing_primary_payload = [
-        frame for frame in manifest.frames if frame.sensor_id is None
-    ]
+    missing_primary_payload = [frame for frame in manifest.frames if frame.sensor_id is None]
     errors: list[str] = []
     warnings: list[str] = []
     if not manifest.frames:
@@ -592,9 +586,7 @@ def _sensors_from_rows(rows: list[object], frame_count: int | None) -> list[Sens
             metadata={"inferred_from": "sampled_rows", "value_type": value_type},
         )
         for name, value_type in sorted(columns.items())
-        if (
-            sensor_type := _sensor_type_from_feature(name, value_type.lower())
-        ) != "unknown"
+        if (sensor_type := _sensor_type_from_feature(name, value_type.lower())) != "unknown"
     ]
 
 

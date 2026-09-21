@@ -157,9 +157,7 @@ class FolderAdapter(DatasetAdapter):
             for index, row in labels.iterrows():
                 track_id = row.get("track_id")
                 annotation_id = (
-                    f"{track_id}-{int(index)}"
-                    if track_id is not None
-                    else f"label-{int(index)}"
+                    f"{track_id}-{int(index)}" if track_id is not None else f"label-{int(index)}"
                 )
                 annotations.append(
                     AnnotationRecord(

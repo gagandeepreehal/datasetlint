@@ -122,9 +122,7 @@ def test_nuscenes_deep_validation_accepts_radar_pcd_payload(tmp_path):
 
 def test_nuscenes_deep_validation_catches_malformed_payloads(tmp_path):
     dataset = _copy_nuscenes_fixture(tmp_path)
-    (dataset / "v1.0-mini" / "samples" / "CAM_FRONT" / "000001.jpg").write_bytes(
-        b"not an image"
-    )
+    (dataset / "v1.0-mini" / "samples" / "CAM_FRONT" / "000001.jpg").write_bytes(b"not an image")
     (dataset / "v1.0-mini" / "samples" / "LIDAR_TOP" / "000001.bin").write_bytes(b"bad")
 
     report = NuScenesAdapter().validate(dataset, deep=True)
@@ -136,8 +134,7 @@ def test_nuscenes_deep_validation_catches_malformed_payloads(tmp_path):
     assert report.coverage["lidar_payload_points"] is False
     assert report.stats["invalid_payload_count"] == 2
     assert any(
-        "camera file does not expose a recognized image header" in error
-        for error in report.errors
+        "camera file does not expose a recognized image header" in error for error in report.errors
     )
     assert any("lidar payload size 3 is not divisible" in error for error in report.errors)
 
@@ -153,10 +150,7 @@ def test_nuscenes_validation_checks_sample_and_ego_pose_links(tmp_path):
     report = NuScenesAdapter().validate(dataset)
 
     assert report.valid is False
-    assert any(
-        "references missing ego_pose missing-ego-pose" in error
-        for error in report.errors
-    )
+    assert any("references missing ego_pose missing-ego-pose" in error for error in report.errors)
     assert any("references missing sample missing-sample" in error for error in report.errors)
 
 

@@ -2,6 +2,12 @@
 
 DatasetLint requires Python 3.10 or newer.
 
+## Install From PyPI
+
+```bash
+python -m pip install datasetlint
+```
+
 ## Install From Source
 
 ```bash
@@ -48,10 +54,6 @@ Hugging Face metadata without those heavy optional packages. Use `--deep` when
 you want nuScenes camera/lidar/radar payload summaries, parser-backed MCAP
 channel/schema/timestamp metadata, ROS bag topic/message metadata, Waymo
 frame/label/calibration metadata, or sampled Hugging Face row diagnostics.
-
-## Package Install Status
-
-This repository has package metadata and a publish workflow, but the current checkout has no Git tags. Until the first PyPI release is published, use the source install rather than documenting `pip install datasetlint` as the default path.
 
 ## Verify The Install
 

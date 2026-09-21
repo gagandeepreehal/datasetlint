@@ -124,7 +124,7 @@ class ROSBagAdapter(DatasetAdapter):
         if not manifest.sensors:
             warnings.append(
                 "No topics found; use --deep with optional dependencies for topic inspection."
-        )
+            )
         deep = manifest.metadata.get("parse_mode") == "deep"
         if deep:
             parse_errors = _parse_errors(warnings)
